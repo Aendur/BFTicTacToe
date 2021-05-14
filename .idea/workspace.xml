@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="864d65c5-4981-4379-beab-ab06b94a8310" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bfttt/BFTTTClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfttt/BFTTTClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/src/components/main.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/main.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/src/constants/constants.js" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/constants/constants.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
