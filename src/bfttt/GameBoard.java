@@ -25,10 +25,11 @@ import java.util.Arrays;
 public class GameBoard {
     public int[] board = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    // 0 = ongoing
-    // 1 = p1 win
-    // 2 = p2 win
-    // 3 = tie
+    // 0 = waiting
+    // 1 = ongoing
+    // 2 = tie
+    // 3 = p1 win
+    // 4 = p2 win
     public int status = 0;
 
     // 1 or 2
