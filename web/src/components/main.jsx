@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button, Row, Col, Input, message, Card, Spin, Typography, Divider } from 'antd';
 import jwt_decode from 'jwt-decode';
 import Board from './board.jsx';
-import { connectionStatusColor, gameStatus, conStatus, playerColor, playerMark, syncDelay } from '../constants/constants.js';
+import { connectionStatusColor, gameStatus, conStatus, playerColor, playerMark, syncDelay, socketPort } from '../constants/constants.js';
 
 export default function Main() {
   const [connectionStatus, setConnectionStatus] = useState(0);
@@ -111,7 +111,7 @@ export default function Main() {
   const connect = () => {
     const protocol = 'ws:';
     const hostname = document.location.hostname;
-    const port = '8080';
+    const port = socketPort;
     const ip = protocol + '//' + hostname + ':' + port;
     var ws = new WebSocket(ip);
     websocket.current = ws;

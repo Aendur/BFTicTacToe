@@ -22,7 +22,7 @@ import org.json.JSONObject;
 
 public class BFTTTClient{
     public static void main(String[] args) throws IOException {
-        int portNumber = 8080;
+        int portNumber = 5001;
         ServerSocket server;
         int lastClientId = 0;
 

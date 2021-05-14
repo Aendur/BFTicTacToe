@@ -40,3 +40,5 @@ export const playerColor = {
 }
 
 export const syncDelay = 60;
+
+export const socketPort = '5001';
