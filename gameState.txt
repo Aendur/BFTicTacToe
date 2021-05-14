@@ -1,0 +1,7 @@
+{
+	board: [0, 0, 0, 0, 0, 0, 0, 0],
+	status: int,
+	turn: int,
+	idPlayer1: int,
+	idPlayer2: int
+}
