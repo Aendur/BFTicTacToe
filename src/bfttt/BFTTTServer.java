@@ -23,7 +23,6 @@ import com.auth0.jwt.JWT;
 public class BFTTTServer extends DefaultSingleRecoverable{
     private int id;
     private String dbPath;
-    //private JSONObject gameState = setInitialState();
     private GameBoard gameState; // = new GameBoard();
 
     private int getClientId(String token) {
@@ -81,7 +80,7 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         this.dbPath = "serverdata" + id + ".json";
 
         // load ongoing games to server
-        this.loadDBFile();
+        // this.loadDBFile();
 
         // initialize game board
         this.gameState = new GameBoard();
