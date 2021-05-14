@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
-import { Button } from 'antd';
-//import { FormOutlined } from '@ant-design/icons';
-//import api from 'servicos/api';
+import React from 'react';
+import { playerMark, playerColor } from '../constants/constants.js';
 
 const cellStyle = {
   backgroundColor: 'gray',
   border: '0',
-  color: 'blue',
   height: '100px',
   width: '100px',
   textAlign: 'center',
@@ -19,20 +16,10 @@ const cellStyle = {
   whiteSpace: 'no-wrap',
 }
 
-const valueToString = {
-  0: '',
-  1: 'X',
-  2: 'O'
-}
-
 export default function Cell(props) {
-  const [visible, setVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-
   const onClick = (value) => {
     let resp = {
       'action': 5,
-      'name': props.name,
       'pos': props.pos,
       'token': props.token
     }
@@ -40,6 +27,6 @@ export default function Cell(props) {
   }
 
   return (
-    <button style={cellStyle} onClick={() => onClick(props.pos)}>{valueToString[props.value]}</button>
+    <button style={{ ...cellStyle, color: playerColor[props.value] }} onClick={() => onClick(props.pos)}>{playerMark[props.value]}</button>
   )
 }

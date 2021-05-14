@@ -2,9 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="864d65c5-4981-4379-beab-ab06b94a8310" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BFTicTacToe.iml" beforeDir="false" afterPath="$PROJECT_DIR$/BFTicTacToe.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bfttt/BFTTTClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfttt/BFTTTClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bfttt/BFTTTServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfttt/BFTTTServer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/components/board.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/board.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/components/cell.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/cell.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,7 +40,7 @@
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="settings.editor.selected.configurable" value="vcs.Git" />
   </component>
-  <component name="RunManager" selected="Application.BFTTTClient">
+  <component name="RunManager" selected="Shell Script.RunWebClients">
     <configuration name="BFTTTClient" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="11" />
       <option name="MAIN_CLASS_NAME" value="bfttt.BFTTTClient" />
@@ -106,7 +109,7 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="RunClient1" type="ShConfigurationType" singleton="false">
+    <configuration name="RunWebClients" type="ShConfigurationType" singleton="false">
       <option name="SCRIPT_TEXT" value="" />
       <option name="INDEPENDENT_SCRIPT_PATH" value="false" />
       <option name="SCRIPT_PATH" value="$PROJECT_DIR$/npm_start_client.bat" />
@@ -126,7 +129,7 @@
       <item itemvalue="Application.BFTTTServer 0" />
       <item itemvalue="Application.BFTTTServer 1" />
       <item itemvalue="Application.BFTTTServer 2" />
-      <item itemvalue="Shell Script.RunClient1" />
+      <item itemvalue="Shell Script.RunWebClients" />
     </list>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />

@@ -1,10 +1,10 @@
 import './App.css';
-import Board from './components/board.jsx'
+import Main from './components/main.jsx'
 
 function App() {
   return (
     <div>
-      <Board></Board>
+      <Main></Main>
     </div>
   );
 }
