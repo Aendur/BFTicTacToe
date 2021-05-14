@@ -23,49 +23,8 @@ import com.auth0.jwt.JWT;
 public class BFTTTServer extends DefaultSingleRecoverable{
     private int id;
     private String dbPath;
-    private JSONObject gameState = setInitialState();
-
-    private JSONObject setInitialState() {
-        JSONObject initialState = new JSONObject();
-        JSONArray board = new JSONArray();
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        initialState.put("board", board);
-        initialState.put("status", 0);
-        initialState.put("turn", -1);
-        initialState.put("idPlayer1", -1);
-        initialState.put("idPlayer2", -1);
-        initialState.put("userDataPlayer1", "");
-        initialState.put("userDataPlayer2", "");
-        return initialState;
-    }
-
-    private void resetGameState() {
-        JSONArray board = new JSONArray();
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        board.put(0);
-        this.gameState.put("board", board);
-        this.gameState.put("status", 0);
-        this.gameState.put("turn", -1);
-        this.gameState.put("idPlayer1", this.gameState.getInt("idPlayer1"));
-        this.gameState.put("idPlayer2", this.gameState.getInt("idPlayer2"));
-        this.gameState.put("userDataPlayer1", this.gameState.getString("userDataPlayer1"));
-        this.gameState.put("userDataPlayer2", this.gameState.getString("userDataPlayer2"));
-    }
+    //private JSONObject gameState = setInitialState();
+    private GameBoard gameState; // = new GameBoard();
 
     private int getClientId(String token) {
         DecodedJWT jwt = JWT.decode(token);
@@ -82,38 +41,18 @@ public class BFTTTServer extends DefaultSingleRecoverable{
     }
 
     private boolean handleNewPlayer(int clientId, String userData) {
-        if(this.gameState.getInt("idPlayer1") == -1) {
-            this.gameState.put("idPlayer1", clientId);
-            this.gameState.put("userDataPlayer1", userData);
-            return true;
-        }
-        if(this.gameState.getInt("idPlayer2") == -1) {
-            this.gameState.put("idPlayer2", clientId);
-            this.gameState.put("userDataPlayer2", userData);
-            this.gameState.put("status", 1);
-            return true;
-        }
-        return false;
+        System.out.println("new player " + clientId + ": " + userData);
+        return this.gameState.addNewPlayer(clientId, userData);
     }
 
     private boolean handleDisconnect(String userData) {
-        if(userData.equals(this.gameState.getString(("userDataPlayer1")))) {
-            this.gameState.put("idPlayer1", -1);
-            this.gameState.put("userDataPlayer1", "");
-            resetGameState();
-            return true;
-        }
-        if(userData.equals(this.gameState.getString(("userDataPlayer2")))) {
-            this.gameState.put("idPlayer2", -1);
-            this.gameState.put("userDataPlayer2", "");
-            resetGameState();
-            return true;
-        }
-        return false;
+        System.out.println("disconnect: " + userData);
+        return this.gameState.disconnectPlayer((userData));
     }
 
     private JSONObject secureGameState() {
-        JSONObject safeGameState = new JSONObject(this.gameState, JSONObject.getNames(this.gameState));
+        //JSONObject safeGameState = new JSONObject(this.gameState, JSONObject.getNames(this.gameState));
+        JSONObject safeGameState = this.gameState.getJSON(); // this function already creates a new object
         safeGameState.remove("userDataPlayer1");
         safeGameState.remove("userDataPlayer2");
         return safeGameState;
@@ -143,6 +82,9 @@ public class BFTTTServer extends DefaultSingleRecoverable{
 
         // load ongoing games to server
         this.loadDBFile();
+
+        // initialize game board
+        this.gameState = new GameBoard();
 
         // initialize BFT
         new ServiceReplica(id,this,this);
@@ -178,10 +120,9 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                     return (response.toString()).getBytes();
                 case 5:
                     System.out.println("(ClientId: "+ clientId +")Acao = marcar posicao");
-                    JSONArray board = this.gameState.getJSONArray("board");
                     int pos = requestObj.getInt("pos");
-                    board.put(pos, 1);
-                    System.out.println("Tabuleiro: "+ gameState.getJSONArray("board"));
+                    this.gameState.markPosition(pos, 1);
+                    System.out.println("Tabuleiro: "+ this.gameState.getBoardJSON());
                     break;
                 case 6:
                     //System.out.println("(ClientId: "+ clientId +")Acao = sincronizar");
@@ -211,14 +152,12 @@ public class BFTTTServer extends DefaultSingleRecoverable{
 
     @Override
     public byte[] getSnapshot() {
-        return this.gameState.toString().getBytes();
+        return this.gameState.getJSON().toString().getBytes();
     }
 
     @Override
     public void installSnapshot(byte[] bytes) {
-        //c = Integer.parseInt(new String(bytes));
-        JSONObject gameState = new JSONObject();
-        gameState.put("board", new int[] {0, 0, 0, 0, 0, 0, 0, 0 ,0});
+        this.gameState = new GameBoard();
     }
 
     public static void main(String[] args) {

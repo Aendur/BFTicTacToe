@@ -38,27 +38,46 @@ public class GameBoard {
     public String userDataPlayer1 = "";
     public String userDataPlayer2 = "";
 
-    public GameBoard(int id1, int id2) {
-        this.idPlayer1 = id1;
-        this.idPlayer2 = id2;
+    public GameBoard() {}
+
+    public boolean addNewPlayer(int clientId, String userData) {
+        if (this.idPlayer1 == -1) {
+            this.idPlayer1 = clientId;
+            this.userDataPlayer1 = userData;
+            return true;
+        }
+        if (this.idPlayer2 == -1) {
+            this.idPlayer2 = clientId;
+            this.userDataPlayer2 = userData;
+            return true;
+        }
+        return false;
     }
 
-    public GameBoard(int id1, int id2, String data1, String data2) {
-        this.idPlayer1 = id1;
-        this.idPlayer2 = id2;
-        this.userDataPlayer1 = data1;
-        this.userDataPlayer2 = data2;
+    public boolean disconnectPlayer(String userData) {
+        if(userData.equals(this.userDataPlayer1)) {
+            this.idPlayer1 = -1;
+            this.userDataPlayer1 = "";
+            this.reset();
+            return true;
+        }
+        if(userData.equals(this.userDataPlayer2)) {
+            this.idPlayer2 = -1;
+            this.userDataPlayer2 = "";
+            this.reset();
+            return true;
+        }
+        return false;
     }
 
-    public void reset() {
-        //for (int i = 0; i < this.board.length; ++i) { this.board[i] = 0; }
+    private void reset() {
         Arrays.fill(this.board, 0);
         this.status = 0;
         this.turn = -1;
-        // this.idPlayer1 =
-        // this.idPlayer2 =
-        // this.userDataPlayer1 =
-        // this.userDataPlayer2 =
+    }
+
+    public void markPosition(int position, int value) {
+        this.board[position] = value;
     }
 
     public JSONObject getJSON() {
@@ -72,6 +91,11 @@ public class GameBoard {
         json.put("userDataPlayer1", this.userDataPlayer1);
         json.put("userDataPlayer2", this.userDataPlayer2);
         return json;
+    }
+
+    public JSONArray getBoardJSON() {
+        JSONArray jsonboard = new JSONArray(board);
+        return jsonboard;
     }
 }
 
