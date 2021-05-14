@@ -5,6 +5,10 @@
  */
 package bfttt;
 
+import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
@@ -14,16 +18,11 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import com.auth0.jwt.JWT;
 
-import java.util.Map;
-
-/**
- *
- * @author eduardo
- */
 public class BFTTTServer extends DefaultSingleRecoverable{
+    private int id;
+    private String dbPath;
     private JSONObject gameState = setInitialState();
 
     private JSONObject setInitialState() {
@@ -120,7 +119,32 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         return safeGameState;
     }
 
+    private void loadDBFile() {
+        File dbFile = new File(this.dbPath);
+        if (dbFile.exists()) {
+            System.out.println("found db file " + this.dbPath);
+            // load file
+
+        } else {
+            // create a new file if one does not exist
+            System.out.println("creating new db file " + this.dbPath);
+            try {
+                dbFile.createNewFile();
+            } catch (IOException e) {
+                System.out.println("failed to create db file " + this.dbPath);
+                System.out.println(e.toString());
+            }
+        }
+    }
+
     public BFTTTServer(int id) {
+        this.id = id;
+        this.dbPath = "serverdata" + id + ".json";
+
+        // load ongoing games to server
+        this.loadDBFile();
+
+        // initialize BFT
         new ServiceReplica(id,this,this);
     }
 
