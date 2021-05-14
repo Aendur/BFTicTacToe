@@ -7,9 +7,6 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,31 +17,32 @@ import bftsmart.tom.ServiceProxy;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 class HandleClient extends Thread {
     private final Socket socket;
     private final ServiceProxy proxy;
     private final int lastClientId;
-    private final String token;
+    private String token;
+    private final String userData;
 
-    public HandleClient(Socket socket, ServiceProxy proxy, int lastClientId) throws UnsupportedEncodingException {
+    public HandleClient(Socket socket, ServiceProxy proxy, int lastClientId) {
         this.socket = socket;
         this.proxy = proxy;
         this.lastClientId = lastClientId;
-        this.token = createToken();
+        this.token = null;
+        this.userData = this.socket.getRemoteSocketAddress().toString();
     }
 
-    private String createToken() {
+    private String createToken(String name) {
         try {
-            Algorithm algorithm = Algorithm.HMAC256("secret");
-            Map<String, Object> headerClaims = new HashMap();
-            headerClaims.put("clientId", this.lastClientId);
-            String token = JWT.create()
+            Algorithm algorithm = Algorithm.HMAC256("43214hb3jk2g14h32g1hj432g1j423j");
+            return JWT.create()
                     .withIssuer("auth0")
-                    .withHeader(headerClaims)
+                    .withClaim("clientId", this.lastClientId)
+                    .withClaim("name", name)
                     .sign(algorithm);
-            return token;
         } catch (JWTCreationException | UnsupportedEncodingException exception){
             //Invalid Signing configuration / Couldn't convert Claims.
             return "";
@@ -130,71 +128,98 @@ class HandleClient extends Thread {
         return null;
     }
 
-    private void disconnectClient(OutputStream outputStream, String reason) throws IOException {
-        System.out.println("(" + socket.getRemoteSocketAddress() + "): Desconectado. Motivo: " + reason);
-        JSONObject response = new JSONObject();
-        response.put("token", this.token);
-        response.put("success", false);
-        response.put("message", reason);
-        sendMessage(outputStream, response.toString());
-        handleDisconnect();
+    private void waitForAuth(InputStream inputStream, OutputStream outputStream) throws IOException {
+        String message;
+        while(!this.socket.isClosed() && this.token == null) {
+            message = decodeMessage(inputStream);
+            if (message == null) {
+                handleDisconnect("Cliente encerrou a conexao forcadamente");
+                break;
+            }
+            System.out.println("(" + this.userData + ")> " + message);
+            JSONObject request = new JSONObject(message);
+            // Send token to client on first request
+            if(request.getInt("action") == 2) {
+                JSONObject response = new JSONObject();
+                this.token = createToken(request.getString(("name")));
+                response.put("action", 2);
+                response.put("message", "Token de acesso recebido");
+                response.put("userData", this.userData);
+                response.put("token", this.token);
+                sendMessage(outputStream, response.toString()); // Send message to webclient
+                readMessages(inputStream, outputStream);
+            }
+        }
     }
 
-    private void handleDisconnect() throws IOException {
+    private JSONObject forwardClientRequest(String message) throws JSONException {
+        JSONObject request = new JSONObject(message);
+        request.put("userData", this.userData);
+        byte[] response = proxy.invokeOrdered(request.toString().getBytes());
+        JSONObject responseObject = new JSONObject(new String(response));
+        //System.out.println("Resposta recebida: " + replyString); // Print server response
+        return responseObject;
+    }
+
+    private boolean checkDisconnection(JSONObject serverResponse, OutputStream outputStream) throws IOException {
+        if(serverResponse.getInt("action") == 4) {
+            JSONObject response = new JSONObject();
+            response.put("action", 4);
+            response.put("message", serverResponse.getString("message"));
+            sendMessage(outputStream, response.toString()); // Send message to webclient
+            return true;
+        }
+        else return false;
+    }
+
+    private void handleDisconnect(String e) {
         JSONObject response = new JSONObject();
-        response.put("token", this.token);
-        response.put("action", 2);
-        response.put("clientId", socket.getRemoteSocketAddress());
-        byte[] reply = proxy.invokeOrdered(response.toString().getBytes());
-        socket.close();
+        response.put("action", 4);
+        response.put("userData", this.userData);
+        this.proxy.invokeOrdered(response.toString().getBytes());
+        System.out.println("(" + this.userData + "): Desconectado. Motivo: " + e);
     }
 
     private void readMessages(InputStream inputStream, OutputStream outputStream) throws IOException {
         int len = 0;
         byte[] b = new byte[1024];
         String message;
+        JSONObject serverResponse;
 
-        while(!socket.isClosed()) {
+        while(!this.socket.isClosed()) {
             try {
                 // Receive message from webclient
                 message = decodeMessage(inputStream);
                 if (message == null) {
-                    handleDisconnect();
+                    handleDisconnect("Cliente encerrou a conexao forcadamente");
                     break;
                 }
 
-                System.out.println("(" + socket.getRemoteSocketAddress() + ")> " + message);
+                System.out.println("(" + this.userData + ")> " + message);
 
                 // Send message to server
-                JSONObject request = new JSONObject(message);
-                request.put("token", this.token);
-                request.put("clientId", socket.getRemoteSocketAddress());
-                byte[] reply = proxy.invokeOrdered(request.toString().getBytes());
-                String replyString = new String(reply);
-                //System.out.println("Resposta recebida: " + replyString); // Print server response
+                serverResponse = forwardClientRequest(message);
 
-                if(replyString.equals("dc")) {
-                    disconnectClient(outputStream, "Ja existe um jogo em andamento");
+                // Send disconnect signal to webclient
+                if(checkDisconnection(serverResponse, outputStream)) {
+                    handleDisconnect(serverResponse.getString("message"));
                     break;
                 }
 
-                JSONObject response = new JSONObject();
-                request.put("token", this.token);
-                response.put("success", true);
-                response.put("message", "");
-                response.put("gameState", replyString.toString());
+                // Forward server response to webclient
+                JSONObject response = serverResponse;
                 sendMessage(outputStream, response.toString()); // Send message to webclient
 
-            } catch (Exception e) {
-                handleDisconnect();
+            } catch (JSONException e) {
+                handleDisconnect("Cliente encerrou a conexao forcadamente");
                 break;
             }
         }
     }
 
-    private void sendMessage(OutputStream outputStream, String message) throws IOException {
+    private void sendMessage(OutputStream outputStream, String message) {
         try {
-            System.out.println("(" + socket.getRemoteSocketAddress() + ")< " + message);
+            System.out.println("(" + this.userData + ")< " + message);
             outputStream.write(encode(message));
             outputStream.flush();
         } catch (UnsupportedEncodingException e) {
@@ -202,7 +227,6 @@ class HandleClient extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     private static byte[] encode(String mess) throws IOException{
@@ -254,68 +278,62 @@ class HandleClient extends Thread {
     }
 
     public void run() {
-        System.out.println("Nova conexao: " + socket.getRemoteSocketAddress());
-        /*try {
-            System.out.println("Nova conexao: " + socket.getRemoteSocketAddress());
+        try {
+            System.out.println("Nova conexao: " + this.userData);
             socket.setSoTimeout(30000);
         } catch (SocketException e) {
+            handleDisconnect("Timeout");
             e.printStackTrace();
-        }*/
+        }
 
         InputStream inputStream;
         try {
             inputStream  = socket.getInputStream();
-        } catch (IOException inputStreamException) {
-            throw new IllegalStateException("Falha ao pegar o inputstream", inputStreamException);
+        } catch (IOException e) {
+            throw new IllegalStateException("Falha ao obter o inputstream", e);
         }
 
         OutputStream outputStream;
         try {
             outputStream  = socket.getOutputStream();
-        } catch (IOException inputStreamException) {
-            throw new IllegalStateException("Falha ao pegar o outputstream", inputStreamException);
+        } catch (IOException e) {
+            throw new IllegalStateException("Falha ao obter o outputstream", e);
         }
 
         try {
             doHandShakeToInitializeWebSocketConnection(inputStream, outputStream);
-        } catch (UnsupportedEncodingException handShakeException) {
-            throw new IllegalStateException("Falha na conexao com o cliente", handShakeException);
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("Falha na conexao com o cliente", e);
         }
 
         try {
-            readMessages(inputStream, outputStream);
+            waitForAuth(inputStream, outputStream);
         } catch (IOException e) {
-            throw new IllegalStateException("Conexao perdida com " + socket.getRemoteSocketAddress(), e);
+            handleDisconnect("Conexao perdida: " + e);
+        }
+        finally {
+            handleDisconnect("Conexao perdida");
         }
     }
 }
 
-public class BFTTTClient {
+public class BFTTTClient{
 
-    public static void main(String[] args) throws UnsupportedEncodingException {
+    public static void main(String[] args) throws IOException {
         int portNumber = 8080;
         ServerSocket server;
         int lastClientId = 0;
 
         ServiceProxy proxy = new ServiceProxy(1001);
 
-        try {
-            server = new ServerSocket(portNumber);
-            System.out.println("Servidor online " + server.getLocalSocketAddress());
-        } catch (IOException exception) {
-            throw new IllegalStateException("Nao foi possivel criar o websocket", exception);
-        }
+        server = new ServerSocket(portNumber);
+        System.out.println("Proxy online " + server.getLocalSocketAddress());
 
         Socket clientSocket;
         while (true) {
-            try {
-                clientSocket = server.accept();
-            } catch (IOException waitException) {
-                throw new IllegalStateException("Tentativa de conexao com o cliente excedeu o tempo limite", waitException);
-            }
+            clientSocket = server.accept();
             new bfttt.HandleClient(clientSocket, proxy, lastClientId).start();
             lastClientId++;
-
         }
     }
 }
