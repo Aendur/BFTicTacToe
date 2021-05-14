@@ -3,11 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="864d65c5-4981-4379-beab-ab06b94a8310" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bfttt/BFTTTClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfttt/BFTTTClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/bfttt/BFTTTServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfttt/BFTTTServer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/App.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/src/components/board.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/board.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/src/components/cell.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/components/cell.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bfttt/GameBoard.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfttt/GameBoard.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

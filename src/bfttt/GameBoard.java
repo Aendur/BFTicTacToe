@@ -52,9 +52,9 @@ public class GameBoard {
         }
         if(this.idPlayer2 == -1) {
             this.reset();
-            this.idPlayer1 = clientId;
-            this.userDataPlayer1 = userData;
-            this.namePlayer1 = name;
+            this.idPlayer2 = clientId;
+            this.userDataPlayer2 = userData;
+            this.namePlayer2 = name;
             this.status = 1;
             this.turn = 1;
             return true;
@@ -100,13 +100,14 @@ public class GameBoard {
         json.put("turn", this.turn);
         json.put("idPlayer1", this.idPlayer1);
         json.put("idPlayer2", this.idPlayer2);
+        json.put("namePlayer1", this.namePlayer1);
+        json.put("namePlayer2", this.namePlayer2);
         json.put("userDataPlayer1", this.userDataPlayer1);
         json.put("userDataPlayer2", this.userDataPlayer2);
         return json;
     }
 
     public JSONArray getBoardJSON() {
-        JSONArray jsonboard = new JSONArray(board);
-        return jsonboard;
+        return new JSONArray(board);
     }
 }

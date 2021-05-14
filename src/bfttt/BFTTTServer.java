@@ -5,6 +5,10 @@
  */
 package bfttt;
 
+import java.util.Map;
+import java.io.File;
+import java.io.IOException;
+
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
@@ -14,12 +18,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import com.auth0.jwt.JWT;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
 
 public class BFTTTServer extends DefaultSingleRecoverable{
     private int id;
@@ -74,6 +73,8 @@ public class BFTTTServer extends DefaultSingleRecoverable{
     }
 
     private int getPlayerNum(String userData) {
+        System.out.println("TESTE1: " + this.gameState.getJSON().getString("userDataPlayer1"));
+        System.out.println("TESTE2: " + this.gameState.getJSON().getString("userDataPlayer2"));
         if(userData.equals(this.gameState.getJSON().getString("userDataPlayer1"))) return 1;
         if(userData.equals(this.gameState.getJSON().getString("userDataPlayer2"))) return 2;
         return 0;
@@ -96,6 +97,16 @@ public class BFTTTServer extends DefaultSingleRecoverable{
     }
 
     public BFTTTServer(int id) {
+        this.id = id;
+        this.dbPath = "serverdata" + id + ".json";
+
+        // load ongoing games to server
+        // this.loadDBFile();
+
+        // initialize game board
+        this.gameState = new GameBoard();
+
+        // initialize BFT
         new ServiceReplica(id,this,this);
     }
 
@@ -146,7 +157,7 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                         response.put("message", "Essa posicao ja foi marcada!");
                         return (response.toString()).getBytes();
                     }
-                    board.put(pos, getPlayerNum(userData));
+                    this.gameState.markPosition(pos, getPlayerNum(userData));
                     this.gameState.setTurn(nextTurn());
                     break;
                 case 6:
@@ -182,9 +193,7 @@ public class BFTTTServer extends DefaultSingleRecoverable{
 
     @Override
     public void installSnapshot(byte[] bytes) {
-        //c = Integer.parseInt(new String(bytes));
-        JSONObject gameState = new JSONObject();
-        gameState.put("board", new int[] {0, 0, 0, 0, 0, 0, 0, 0 ,0});
+        this.gameState = new GameBoard();
     }
 
     public static void main(String[] args) {
