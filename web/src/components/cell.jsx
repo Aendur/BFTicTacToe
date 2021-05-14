@@ -31,9 +31,10 @@ export default function Cell(props) {
 
   const onClick = (value) => {
     let resp = {
-      'action': 1,
+      'action': 5,
       'name': props.name,
-      'pos': props.pos
+      'pos': props.pos,
+      'token': props.token
     }
     props.ws.send(JSON.stringify(resp));
   }

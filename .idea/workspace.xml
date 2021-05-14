@@ -2,18 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="864d65c5-4981-4379-beab-ab06b94a8310" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/bcprov_jdk15on_1_55.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/npm_start_client.bat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BFTicTacToe.iml" beforeDir="false" afterPath="$PROJECT_DIR$/BFTicTacToe.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bfttt/BFTTTClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfttt/BFTTTClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bfttt/BFTTTServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bfttt/BFTTTServer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bfttt/EcoClient.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bfttt/EcoServer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/web/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/web/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,30 +31,29 @@
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/npm_start_client.bat" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/lib" />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.2" />
     <property name="settings.editor.selected.configurable" value="vcs.Git" />
   </component>
-  <component name="RunManager" selected="Shell Script.RunClient1">
+  <component name="RunManager" selected="Application.BFTTTClient">
     <configuration name="BFTTTClient" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="11" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
       <option name="MAIN_CLASS_NAME" value="bfttt.BFTTTClient" />
       <module name="BFTicTacToe" />
       <option name="PROGRAM_PARAMETERS" value="teste" />
+      <option name="VM_PARAMETERS" value="-Djava.security.properties=&quot;./config/java.security&quot;; -Dlogback.configurationFile=&quot;./config/logback.xml&quot;" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
     <configuration name="BFTTTServer 0" type="Application" factoryName="Application">
       <option name="ALTERNATIVE_JRE_PATH" value="11" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
-      <envs>
-        <env name="java.security.properties" value="&quot;./config/java.security&quot;" />
-        <env name="logback.configurationFile" value="&quot;./config/logback.xml&quot;" />
-      </envs>
       <option name="MAIN_CLASS_NAME" value="bfttt.BFTTTServer" />
       <module name="BFTicTacToe" />
       <option name="PROGRAM_PARAMETERS" value="0" />
+      <option name="VM_PARAMETERS" value="-Djava.security.properties=&quot;./config/java.security&quot;; -Dlogback.configurationFile=&quot;./config/logback.xml&quot;" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="bfttt.*" />
@@ -76,14 +66,10 @@
     </configuration>
     <configuration name="BFTTTServer 1" type="Application" factoryName="Application">
       <option name="ALTERNATIVE_JRE_PATH" value="11" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
-      <envs>
-        <env name="java.security.properties" value="&quot;./config/java.security&quot;" />
-        <env name="logback.configurationFile" value="&quot;./config/logback.xml&quot;" />
-      </envs>
       <option name="MAIN_CLASS_NAME" value="bfttt.BFTTTServer" />
       <module name="BFTicTacToe" />
       <option name="PROGRAM_PARAMETERS" value="1" />
+      <option name="VM_PARAMETERS" value="-Djava.security.properties=&quot;./config/java.security&quot;; -Dlogback.configurationFile=&quot;./config/logback.xml&quot;" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="bfttt.*" />
@@ -96,14 +82,10 @@
     </configuration>
     <configuration name="BFTTTServer 2" type="Application" factoryName="Application">
       <option name="ALTERNATIVE_JRE_PATH" value="11" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
-      <envs>
-        <env name="java.security.properties" value="&quot;./config/java.security&quot;" />
-        <env name="logback.configurationFile" value="&quot;./config/logback.xml&quot;" />
-      </envs>
       <option name="MAIN_CLASS_NAME" value="bfttt.BFTTTServer" />
       <module name="BFTicTacToe" />
       <option name="PROGRAM_PARAMETERS" value="2" />
+      <option name="VM_PARAMETERS" value="-Djava.security.properties=&quot;./config/java.security&quot;; -Dlogback.configurationFile=&quot;./config/logback.xml&quot;" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="bfttt.*" />
