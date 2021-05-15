@@ -80,36 +80,29 @@ export default function Main() {
   }
 
   const makeResult = (result) => {
-    let title = '-';
     let message = '';
     let icon = null;
     if(result === 2) {
-      title = 'Empate!';
       message = 'O jogo empatou';
       icon = (<MehOutlined />);
     }
     if(result === 3 && myPlayerRef.current === 1) {
-      title = 'Você venceu!';
       message = 'Parabéns ' + findMyName() + ', você venceu!';
       icon = (<SmileOutlined />);
     }
     if(result === 3 && myPlayerRef.current === 2) {
-      title = 'Você perdeu!';
       message = findMyName() + ', infelizmente você perdeu!';
       icon = (<FrownOutlined />);
     }
     if(result === 4 && myPlayerRef.current === 1) {
-      title = 'Você perdeu!';
       message = findMyName() + ', infelizmente você perdeu!';
       icon = (<FrownOutlined />);
     }
     if(result === 4 && myPlayerRef.current === 2) {
-      title = 'Você venceu!';
       message = 'Parabéns ' + findMyName() + ', você venceu!';
       icon = (<SmileOutlined />);
     }
     return {
-      title: title,
       message: message,
       icon: icon
     };
@@ -196,7 +189,7 @@ export default function Main() {
     }
 
     ws.onclose = () => {
-      message.error('A conexão com o servidor foi perdida');
+      message.error('Desconectado do servidor');
       resetState();
     }
   }

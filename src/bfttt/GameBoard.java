@@ -111,4 +111,60 @@ public class GameBoard {
     public JSONArray getBoardJSON() {
         return new JSONArray(board);
     }
+
+    public void setNextTurn() {
+        if(this.turn == 1) this.turn = 2;
+        else if(this.turn == 2) this.turn = 1;
+    }
+
+    public boolean checkEmptySpace(int pos) {
+        if(board[pos] != 0) return false;
+        return true;
+    }
+
+    public boolean checkPlayerTurn(String userData) {
+        if(this.turn == getPlayerNum(userData)) return true;
+        return false;
+    }
+
+    public int getPlayerNum(String userData) {
+        if(userData.equals(this.userDataPlayer1)) return 1;
+        if(userData.equals(this.userDataPlayer2)) return 2;
+        return 0;
+    }
+
+    public JSONObject secureGameState() {
+        JSONObject safeGameState = this.getJSON();
+        safeGameState.remove("userDataPlayer1");
+        safeGameState.remove("userDataPlayer2");
+        return safeGameState;
+    }
+
+    public boolean isGameOver(int X_or_O) {
+        int[] gameArray = GameBoard.board;
+        if (checkHorizontal(X_or_O, gameArray)) return true;
+        if (checkVertical(X_or_O, gameArray)) return true;
+        if (checkCrossed(X_or_O, gameArray)) return true;
+        return false;
+    }
+
+    private boolean checkVertical (int X_or_O, int[] array) {
+        for (int i = 0; i < 3; i++) {
+            if (array[i] == X_or_O && array[i+3] == X_or_O && array[i+6] == X_or_O) return true;
+        }
+        return false;
+    }
+
+    private boolean checkHorizontal (int X_or_O, int[] array) {
+        for (int i = 0; i < 9; i = i + 3) {
+            if (array[i] == X_or_O && array[i+1] == X_or_O && array[i+2] == X_or_O) return true;
+        }
+        return false;
+    }
+
+    private boolean checkCrossed (int X_or_O, int[] array) {
+        if (array[0] == X_or_O && array[4] == X_or_O && array[8] == X_or_O) return true;
+        if (array[2] == X_or_O && array[4] == X_or_O && array[6] == X_or_O) return true;
+        return false;
+    }
 }

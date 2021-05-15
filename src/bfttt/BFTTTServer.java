@@ -47,13 +47,6 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         return this.gameState.disconnectPlayer((userData));
     }
 
-    private JSONObject secureGameState() {
-        JSONObject safeGameState = this.gameState.getJSON(); // this function already creates a new object
-        safeGameState.remove("userDataPlayer1");
-        safeGameState.remove("userDataPlayer2");
-        return safeGameState;
-    }
-
     private void loadDBFile() {
         File dbFile = new File(this.dbPath);
         if (dbFile.exists()) {
@@ -72,62 +65,8 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         }
     }
 
-    private int getPlayerNum(String userData) {
-        if(userData.equals(this.gameState.getJSON().getString("userDataPlayer1"))) return 1;
-        if(userData.equals(this.gameState.getJSON().getString("userDataPlayer2"))) return 2;
-        return 0;
-    }
-
-    private boolean checkPlayerTurn(String userData) {
-        if(this.gameState.getJSON().getInt("turn") == getPlayerNum(userData)) return true;
-        return false;
-    }
-
-    private boolean checkEmptySpace(int pos) {
-        if(this.gameState.getBoardJSON().getInt(pos) != 0) return false;
-        return true;
-    }
-
-    private int nextTurn() {
-        if(this.gameState.getJSON().getInt("turn") == 1) return 2;
-        if(this.gameState.getJSON().getInt("turn") == 2) return 1;
-        return 0;
-    }
-
-    private boolean isGameOver(int X_or_O) {
-        int[] gameArray = GameBoard.board;
-
-        if (checkHorizontal(X_or_O, gameArray)) return true;
-        if (checkVertical(X_or_O, gameArray)) return true;
-        if (checkCrossed(X_or_O, gameArray)) return true;
-
-        return false;
-    }
-
-    private boolean checkVertical (int X_or_O, int[] array) {
-        for (int i = 0; i < 3; i++) {
-            if (array[i] == X_or_O && array[i+3] == X_or_O && array[i+6] == X_or_O) return true;
-        }
-        return false;
-    }
-
-    private boolean checkHorizontal (int X_or_O, int[] array) {
-        for (int i = 0; i < 9; i = i + 3) {
-            if (array[i] == X_or_O && array[i+1] == X_or_O && array[i+2] == X_or_O) return true;
-        }
-        return false;
-    }
-
-    private boolean checkCrossed (int X_or_O, int[] array) {
-        if (array[0] == X_or_O && array[4] == X_or_O && array[8] == X_or_O) return true;
-        if (array[2] == X_or_O && array[4] == X_or_O && array[6] == X_or_O) return true;
-
-        return false;
-    }
-
     private boolean noZeroes () {
         int[] gameArray = GameBoard.board;
-
         for (int i = 0; i < 9; i++) {
             if (gameArray[i] == 0) {
                 return false;
@@ -135,8 +74,6 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         }
         return true;
     }
-
-
 
     public BFTTTServer(int id) {
         this.id = id;
@@ -193,20 +130,20 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                         response.put("message", "O jogo nao esta em andamento!");
                         return (response.toString()).getBytes();
                     }
-                    if(!checkPlayerTurn(userData)) {
+                    if(!this.gameState.checkPlayerTurn(userData)) {
                         response.put("action", action);
                         response.put("message", "Nao e a sua vez de jogar!");
                         return (response.toString()).getBytes();
                     }
                     int pos = requestObj.getInt("pos");
-                    if(!checkEmptySpace(pos)) {
+                    if(!this.gameState.checkEmptySpace(pos)) {
                         response.put("action", action);
                         response.put("message", "Essa posicao ja foi marcada!");
                         return (response.toString()).getBytes();
                     }
-                    int playerNum = getPlayerNum(userData);
+                    int playerNum = this.gameState.getPlayerNum(userData);
                     this.gameState.markPosition(pos, playerNum);
-                    if(isGameOver(playerNum)){
+                    if(this.gameState.isGameOver(playerNum)){
                         if(playerNum == 1) {
                             response.put("action", action);
                             response.put("message", "O jogador 1 venceu!");
@@ -218,12 +155,12 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                         }
                         return (response.toString()).getBytes();
                     }
-                    if (!isGameOver(playerNum) && noZeroes()) {
+                    if (!this.gameState.isGameOver(playerNum) && noZeroes()) {
                         response.put("action", action);
                         response.put("message", "O jogo empatou!");
                         this.gameState.setStatus(2);
                     }
-                    this.gameState.setTurn(nextTurn());
+                    this.gameState.setNextTurn();
                     break;
                 case 6:
                     //System.out.println("(ClientId: "+ clientId +")Acao = sincronizar");
@@ -234,7 +171,7 @@ public class BFTTTServer extends DefaultSingleRecoverable{
             }
 
             response.put("action", action);
-            response.put("gameState", secureGameState());
+            response.put("gameState", this.gameState.secureGameState());
             return (response.toString()).getBytes();
         } catch (JSONException e) {
             JSONObject response = new JSONObject();

@@ -8,7 +8,7 @@ export default function Results(props) {
 
   return (
     <Modal
-      title={props.resultsObj && props.resultsObj.title}
+      title={null}
       visible={props.resultsVisible.current}
       onOk={handleCancel}
       onCancel={handleCancel}
