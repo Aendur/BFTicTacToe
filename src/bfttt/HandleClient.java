@@ -189,6 +189,7 @@ class HandleClient extends Thread {
         response.put("action", 4);
         response.put("userData", this.userData);
         this.proxy.invokeOrdered(response.toString().getBytes());
+        this.proxy.close();
         System.out.println("(" + this.userData + "): Desconectado. Motivo: " + e);
     }
 

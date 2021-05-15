@@ -258,7 +258,8 @@ public class BFTTTServer extends DefaultSingleRecoverable{
 
     @Override
     public void installSnapshot(byte[] bytes) {
-        this.gameState = new GameBoard();
+        JSONObject snap = new JSONObject(bytes);
+        this.gameState = new GameBoard(snap);
     }
 
     public static void main(String[] args) {

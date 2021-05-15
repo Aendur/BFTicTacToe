@@ -24,6 +24,18 @@ public class GameBoard {
     public String userDataPlayer2 = "";
 
     public GameBoard() {}
+    public GameBoard(JSONObject snapshot) {
+        JSONArray b = snapshot.getJSONArray("board");
+        for (int i = 0; i < b.length(); ++i) { board[i] = b.getInt(i); }
+        this.status = snapshot.getInt("status");
+        this.turn = snapshot.getInt("turn");
+        this.idPlayer1 = snapshot.getInt("idPlayer1");
+        this.idPlayer2 = snapshot.getInt("idPlayer2");
+        this.namePlayer1 = snapshot.getString("namePlayer1");
+        this.namePlayer2 = snapshot.getString("namePlayer2");
+        this.userDataPlayer1 = snapshot.getString("userDataPlayer1");
+        this.userDataPlayer2 = snapshot.getString("userDataPlayer2");
+    }
 
     public boolean addNewPlayer(int clientId, String userData, String name) {
         if(this.idPlayer1 == -1) {
