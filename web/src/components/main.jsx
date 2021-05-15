@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Row, Col, Input, message, Card, Spin, Typography, Divider } from 'antd';
+import { Button, Row, Col, Input, message, Card, Spin, Typography, Divider, Avatar, Badge } from 'antd';
+import { ClockCircleOutlined, PlayCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import jwt_decode from 'jwt-decode';
 import Board from './board.jsx';
 import { connectionStatusColor, gameStatus, conStatus, playerColor, playerMark, syncDelay, socketPort } from '../constants/constants.js';
@@ -157,7 +158,7 @@ export default function Main() {
       'token': token
     }
     resetState();
-    if (websocket.current && websocket.current.readyState === WebSocket.OPEN){
+    if (websocket.current && websocket.current.readyState === WebSocket.OPEN) {
       websocket.current.send(JSON.stringify(request));
       websocket.current.close();
     }
@@ -168,21 +169,24 @@ export default function Main() {
   }
 
   return (
-    <div className='main' style={{ textAlign: 'center' }}>
+    <div style={{ textAlign: 'center', height: '100vh' }}>
+      <div style={{ height: '10%' }}>
+        <Typography.Title level={1} style={{transform: 'translateY(50%)', WebkitTransform: 'translateY(50%)'}}>BFTicTacToe</Typography.Title>
+      </div>
       {connectionStatus !== 2 ?
         <Row justify='center'>
           <Col span={24}>
             Nome: <Input style={{ width: '200px' }} onChange={setNameValue} value={name} disabled={connectionStatus !== 0}></Input>
           </Col>
           <Col span={24}>
-            <Button type='primary' onClick={connect} disabled={!name}>Conectar</Button>
+            <Button type='primary' onClick={connect} style={{ margin: '1em' }} icon={<PlayCircleOutlined />} disabled={!name}>Conectar</Button>
           </Col>
           <Divider />
           <Typography.Title level={4} style={{ color: connectionStatusColor[connectionStatus] }}>Status da conexão: {conStatus[connectionStatus]}</Typography.Title>
         </Row>
         :
         <>
-          <Button type='primary' onClick={disconnect} style={{ marginBottom: '1em' }}>Desconectar</Button>
+          <Button type='primary' onClick={disconnect} style={{ margin: '1em' }} icon={<CloseCircleOutlined />}>Desconectar</Button>
           <Divider />
           <Row justify='center'>
             <Col>
@@ -193,13 +197,12 @@ export default function Main() {
           <Row justify='center' align='middle'>
             <Col span={8}>
               <Row justify='center'>
-                <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[1] }} title={gameState.status === 0 ? '-' : gameState.namePlayer1}>
+                <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[1] }} title={gameState.namePlayer1 ? gameState.namePlayer1 : '-'}>
                   <Spin tip='Aguardando oponente' spinning={gameState.status === 0 && myPlayer !== 1}>
                     {(gameState.status !== 0 || myPlayer === 1) &&
-                      <div>
-                        <p style={{ fontWeight: 700 }}>{gameState.turn === 1 ? 'Sua vez!' : null}</p>
-                        <p style={{ fontSize: '60px', color: playerColor[1] }}>{playerMark[1]}</p>
-                      </div>}
+                      <Badge count={gameState.turn !== 1 ? <ClockCircleOutlined style={{ color: '#f5222d' }} /> : 0}>
+                        <Avatar size={100} shape='circle' icon={<span style={{ color: playerColor[1], fontWeight: 600 }}>{playerMark[1]}</span>} />
+                      </Badge>}
                   </Spin>
                 </Card>
               </Row>
@@ -209,13 +212,12 @@ export default function Main() {
             </Col>
             <Col span={8}>
               <Row justify='center'>
-                <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[2] }} title={gameState.status === 0 ? '-' : gameState.namePlayer2}>
+                <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[2] }} title={gameState.namePlayer2 ? gameState.namePlayer2 : '-'}>
                   <Spin tip='Aguardando oponente' spinning={gameState.status === 0 && myPlayer !== 2}>
                     {(gameState.status !== 0 || myPlayer === 2) &&
-                      <div>
-                        <p style={{ fontWeight: 700 }}>{gameState.turn === 2 ? 'Sua vez!' : null}</p>
-                        <p style={{ fontSize: '60px', color: playerColor[2] }}>{playerMark[2]}</p>
-                      </div>}
+                      <Badge count={gameState.turn !== 2 ? <ClockCircleOutlined style={{ color: '#f5222d' }} /> : 0}>
+                        <Avatar size={100} shape='circle' icon={<span style={{ color: playerColor[2], fontWeight: 600 }}>{playerMark[2]}</span>} />
+                      </Badge>}
                   </Spin>
                 </Card>
               </Row>
