@@ -2,8 +2,6 @@ package bfttt;
 
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
@@ -26,16 +24,16 @@ class HandleClient extends Thread {
     private final Socket socket;
     private final ServiceProxy proxy;
     private final int lastClientId;
-    private String token;
     private final String userData;
     private final String secret = "43214hb3jk2g14h32g1hj432g1j423j";
+    private boolean isAuthenticated;
 
     public HandleClient(Socket socket, ServiceProxy proxy, int lastClientId) {
         this.socket = socket;
         this.proxy = proxy;
         this.lastClientId = lastClientId;
-        this.token = null;
         this.userData = this.socket.getRemoteSocketAddress().toString();
+        this.isAuthenticated = false;
     }
 
     private String createToken(String name) {
@@ -148,10 +146,10 @@ class HandleClient extends Thread {
 
     private void waitForAuth(InputStream inputStream, OutputStream outputStream) throws IOException {
         String message;
-        while(!this.socket.isClosed() && this.token == null) {
+        while(!this.socket.isClosed() && !this.isAuthenticated) {
             message = decodeMessage(inputStream);
             if (message == null) {
-                handleDisconnect("Cliente encerrou a conexao forcadamente");
+                handleDisconnect("Cliente desconectou de forma inesperada");
                 break;
             }
             System.out.println("(" + this.userData + ")> " + message);
@@ -159,11 +157,11 @@ class HandleClient extends Thread {
             // Send token to client on first request
             if(request.getInt("action") == 2) {
                 JSONObject response = new JSONObject();
-                this.token = createToken(request.getString(("name")));
+                this.isAuthenticated = true;
                 response.put("action", 2);
                 response.put("message", "Token de acesso recebido");
                 response.put("userData", this.userData);
-                response.put("token", this.token);
+                response.put("token", createToken(request.getString(("name"))));
                 sendMessage(outputStream, response.toString()); // Send message to webclient
                 readMessages(inputStream, outputStream);
             }
@@ -175,7 +173,6 @@ class HandleClient extends Thread {
         request.put("userData", this.userData);
         byte[] response = proxy.invokeOrdered(request.toString().getBytes());
         JSONObject responseObject = new JSONObject(new String(response));
-        //System.out.println("Resposta recebida: " + replyString); // Print server response
         return responseObject;
     }
 
@@ -204,13 +201,12 @@ class HandleClient extends Thread {
                 // Receive message from webclient
                 message = decodeMessage(inputStream);
                 if (message == null) {
-                    handleDisconnect("Cliente encerrou a conexao forcadamente");
+                    handleDisconnect("Cliente desconectou de forma inesperada");
                     break;
                 }
 
                 // Validate token before forwarding message
                 if (validateToken(message) == null) {
-                    System.out.println("(" + this.userData + ")> Desconectado por token invalido");
                     handleDisconnect("Token invalido");
                     break;
                 }
@@ -228,12 +224,12 @@ class HandleClient extends Thread {
                 if(checkDisconnection(serverResponse)) {
                     break;
                 }
-
             } catch (JSONException e) {
-                handleDisconnect("Cliente encerrou a conexao forcadamente");
+                handleDisconnect("Cliente desconectou de forma inesperada");
                 break;
             }
         }
+        handleDisconnect("Cliente desconectou");
     }
 
     private void sendMessage(OutputStream outputStream, String message) {
@@ -297,13 +293,7 @@ class HandleClient extends Thread {
     }
 
     public void run() {
-        try {
-            System.out.println("Nova conexao: " + this.userData);
-            socket.setSoTimeout(30000);
-        } catch (SocketException e) {
-            handleDisconnect("Timeout");
-            e.printStackTrace();
-        }
+        System.out.println("Nova conexao: " + this.userData);
 
         InputStream inputStream;
         try {
@@ -328,10 +318,10 @@ class HandleClient extends Thread {
         try {
             waitForAuth(inputStream, outputStream);
         } catch (IOException e) {
-            handleDisconnect("Conexao perdida: " + e);
+            handleDisconnect(e.toString());
         }
         finally {
-            handleDisconnect("Conexao perdida");
+            handleDisconnect("Cliente desconectou de forma inesperada");
         }
     }
 }

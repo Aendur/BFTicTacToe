@@ -21,6 +21,7 @@ public class BFTTTClient{
         System.out.println("Proxy online " + server.getLocalSocketAddress());
 
         Socket clientSocket;
+
         while (true) {
             clientSocket = server.accept();
             ServiceProxy proxy = new ServiceProxy(1001 + rng.nextInt(2000000000)); //lastProxyId++);
