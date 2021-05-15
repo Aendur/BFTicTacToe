@@ -3,13 +3,13 @@ import { Result, Modal } from 'antd';
 
 export default function Results(props) {
   const handleCancel = () => {
-    props.updateRef(false, props.resultsVisibleRef, props.setResultsVisible);
+    props.updateRef(false, props.resultsVisible, props.setResultsVisible);
   }
 
   return (
     <Modal
       title={props.resultsObj && props.resultsObj.title}
-      visible={props.resultsVisibleRef.current}
+      visible={props.resultsVisible.current}
       onOk={handleCancel}
       onCancel={handleCancel}
       cancelButtonProps={{ style: { display: 'none' } }}

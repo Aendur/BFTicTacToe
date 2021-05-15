@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Row, Col, Input, message, Card, Spin, Typography, Divider, Avatar, Badge } from 'antd';
-import { ExclamationCircleOutlined, PlayCircleOutlined, CloseCircleOutlined, SmileOutlined, MehOutlined, FrownOutlined } from '@ant-design/icons';
+import { PlayCircleOutlined, CloseCircleOutlined, SmileOutlined, MehOutlined, FrownOutlined } from '@ant-design/icons';
 import jwt_decode from 'jwt-decode';
 import Board from './board.jsx';
 import Results from './results.jsx';
@@ -121,7 +121,7 @@ export default function Main() {
     setTimeout(
       function() {
         disconnect();
-      }, 1500)
+      }, 1000);
     }
 
   const handleAction = (response, ws) => {
@@ -258,7 +258,7 @@ export default function Main() {
                 <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[1] }} title={gameState.namePlayer1 ? gameState.namePlayer1 : '-'}>
                   <Spin tip='Aguardando oponente' spinning={gameState.status === 0 && myPlayer !== 1}>
                     {(gameState.status !== 0 || myPlayer === 1) &&
-                      <Badge count={gameState.turn === 1 ? <ExclamationCircleOutlined style={{ color: '#f5222d' }} /> : 0}>
+                      <Badge dot={gameState.turn === 1}>
                         <Avatar size={100} shape='circle' icon={<span style={{ color: playerColor[1], fontWeight: 600 }}>{playerMark[1]}</span>} />
                       </Badge>}
                   </Spin>
@@ -273,7 +273,7 @@ export default function Main() {
                 <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[2] }} title={gameState.namePlayer2 ? gameState.namePlayer2 : '-'}>
                   <Spin tip='Aguardando oponente' spinning={gameState.status === 0 && myPlayer !== 2}>
                     {(gameState.status !== 0 || myPlayer === 2) &&
-                      <Badge count={gameState.turn === 2 ? <ExclamationCircleOutlined style={{ color: '#f5222d' }} /> : 0}>
+                      <Badge dot={gameState.turn === 2}>
                         <Avatar size={100} shape='circle' icon={<span style={{ color: playerColor[2], fontWeight: 600 }}>{playerMark[2]}</span>} />
                       </Badge>}
                   </Spin>
@@ -283,7 +283,7 @@ export default function Main() {
           </Row>
         </>
       }
-      <Results updateRef={updateRef} resultsVisibleRef={resultsVisibleRef} setResultsVisible={setResultsVisible} resultsObj={resultsObjRef.current} />
+      <Results updateRef={updateRef} resultsVisible={resultsVisibleRef} setResultsVisible={setResultsVisible} resultsObj={resultsObjRef.current} />
     </div>
   )
 }
