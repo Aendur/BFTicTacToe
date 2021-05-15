@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 
 public class GameBoard {
-    public int[] board = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    public static int[] board = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     // 0 = waiting
     // 1 = ongoing
@@ -80,13 +80,13 @@ public class GameBoard {
     }
 
     private void reset() {
-        Arrays.fill(this.board, 0);
+        Arrays.fill(board, 0);
         this.status = 0;
         this.turn = 0;
     }
 
     public void markPosition(int position, int value) {
-        this.board[position] = value;
+        board[position] = value;
     }
 
     public void setTurn(int turn) {

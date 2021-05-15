@@ -96,6 +96,39 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         return 0;
     }
 
+    private boolean isGameOver(int X_or_O) {
+        int[] gameArray = GameBoard.board;
+
+        if (checkHorizontal(X_or_O, gameArray)) return true;
+        if (checkVertical(X_or_O, gameArray)) return true;
+        if (checkCrossed(X_or_O, gameArray)) return true;
+
+        return false;
+    }
+
+    private boolean checkVertical (int X_or_O, int[] array) {
+        for (int i = 0; i < 3; i++) {
+            if (array[i] == X_or_O && array[i+3] == X_or_O && array[i+6] == X_or_O) return true;
+        }
+        return false;
+    }
+
+    private boolean checkHorizontal (int X_or_O, int[] array) {
+        for (int i = 0; i < 9; i = i + 3) {
+            if (array[i] == X_or_O && array[i+1] == X_or_O && array[i+2] == X_or_O) return true;
+        }
+        return false;
+    }
+
+    private boolean checkCrossed (int X_or_O, int[] array) {
+        if (array[0] == X_or_O && array[4] == X_or_O && array[8] == X_or_O) return true;
+        if (array[2] == X_or_O && array[4] == X_or_O && array[6] == X_or_O) return true;
+
+        return false;
+    }
+
+
+
     public BFTTTServer(int id) {
         this.id = id;
         this.dbPath = "serverdata" + id + ".json";
@@ -122,7 +155,7 @@ public class BFTTTServer extends DefaultSingleRecoverable{
             int clientId = getClientId(token);
             JSONObject response = new JSONObject();
 
-            switch(requestObj.getInt("action")) {
+            switch(action) {
                 case 3:
                     System.out.println("(ClientId: "+ clientId +")Acao = pedir para entrar no jogo");
                     if(!handleNewPlayer(clientId, userData, name)) {
@@ -157,7 +190,13 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                         response.put("message", "Essa posicao ja foi marcada!");
                         return (response.toString()).getBytes();
                     }
-                    this.gameState.markPosition(pos, getPlayerNum(userData));
+                    int playerNum = getPlayerNum(userData);
+                    this.gameState.markPosition(pos, playerNum);
+                    if(isGameOver(playerNum)){
+                        response.put("action", action);
+                        response.put("message", "O jogo acabou!");
+                        return (response.toString()).getBytes();
+                    }
                     this.gameState.setTurn(nextTurn());
                     break;
                 case 6:
