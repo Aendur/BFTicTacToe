@@ -93,6 +93,10 @@ public class GameBoard {
         this.turn = turn;
     }
 
+    public void setStatus(int status) {
+        this.status = status;
+    }
+
     public JSONObject getJSON() {
         JSONObject json = new JSONObject();
         JSONArray jsonboard = new JSONArray(board);

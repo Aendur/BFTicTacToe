@@ -127,6 +127,17 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         return false;
     }
 
+    private boolean noZeroes () {
+        int[] gameArray = GameBoard.board;
+
+        for (int i = 0; i < 9; i++) {
+            if (gameArray[i] == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
 
     public BFTTTServer(int id) {
@@ -191,16 +202,23 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                         return (response.toString()).getBytes();
                     }
                     int playerNum = getPlayerNum(userData);
-                    if(isGameOver(playerNum)){
-                        response.put("action", action);
-                        response.put("message", "O jogo acabou!");
-                        return (response.toString()).getBytes();
-                    }
                     this.gameState.markPosition(pos, playerNum);
                     if(isGameOver(playerNum)){
-                        response.put("action", action);
-                        response.put("message", "O jogo acabou!");
+                        if(playerNum == 1) {
+                            response.put("action", action);
+                            response.put("message", "O jogador 1 venceu!");
+                            this.gameState.setStatus(3);
+                        } else if(playerNum == 2) {
+                            response.put("action", action);
+                            response.put("message", "O jogador 2 venceu!");
+                            this.gameState.setStatus(4);
+                        }
                         return (response.toString()).getBytes();
+                    }
+                    if (!isGameOver(playerNum) && noZeroes()) {
+                        response.put("action", action);
+                        response.put("message", "O jogo empatou!");
+                        this.gameState.setStatus(2);
                     }
                     this.gameState.setTurn(nextTurn());
                     break;
