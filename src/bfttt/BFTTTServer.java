@@ -191,6 +191,11 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                         return (response.toString()).getBytes();
                     }
                     int playerNum = getPlayerNum(userData);
+                    if(isGameOver(playerNum)){
+                        response.put("action", action);
+                        response.put("message", "O jogo acabou!");
+                        return (response.toString()).getBytes();
+                    }
                     this.gameState.markPosition(pos, playerNum);
                     if(isGameOver(playerNum)){
                         response.put("action", action);
