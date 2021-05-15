@@ -1,3 +1,4 @@
+import { message } from 'antd';
 import React from 'react';
 import { playerMark, playerColor } from '../constants/constants.js';
 
@@ -23,7 +24,8 @@ export default function Cell(props) {
       'pos': props.pos,
       'token': props.token
     }
-    props.ws.send(JSON.stringify(resp));
+    if(props.ws && props.ws.readyState === WebSocket.OPEN) props.ws.send(JSON.stringify(resp));
+    else message.error('Você não está conectado!');
   }
 
   return (

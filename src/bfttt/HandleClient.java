@@ -1,7 +1,6 @@
 package bfttt;
 
 import java.io.*;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -15,8 +14,11 @@ import javax.xml.bind.DatatypeConverter;
 
 import bftsmart.tom.ServiceProxy;
 import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -26,6 +28,7 @@ class HandleClient extends Thread {
     private final int lastClientId;
     private String token;
     private final String userData;
+    private final String secret = "43214hb3jk2g14h32g1hj432g1j423j";
 
     public HandleClient(Socket socket, ServiceProxy proxy, int lastClientId) {
         this.socket = socket;
@@ -37,7 +40,7 @@ class HandleClient extends Thread {
 
     private String createToken(String name) {
         try {
-            Algorithm algorithm = Algorithm.HMAC256("43214hb3jk2g14h32g1hj432g1j423j");
+            Algorithm algorithm = Algorithm.HMAC256(this.secret);
             return JWT.create()
                     .withIssuer("auth0")
                     .withClaim("clientId", this.lastClientId)
@@ -46,6 +49,21 @@ class HandleClient extends Thread {
         } catch (JWTCreationException | UnsupportedEncodingException exception){
             //Invalid Signing configuration / Couldn't convert Claims.
             return "";
+        }
+    }
+
+    private String validateToken(String message) {
+        try {
+            String token = new JSONObject(message).getString("token");
+            Algorithm algorithm = Algorithm.HMAC256(this.secret);
+            JWTVerifier verifier = JWT.require(algorithm)
+                    .withIssuer("auth0")
+                    .build();
+            DecodedJWT jwt = verifier.verify(token);
+            return jwt.toString();
+        } catch (JWTVerificationException | UnsupportedEncodingException exception){
+            //Invalid signature/claims
+            return null;
         }
     }
 
@@ -161,15 +179,9 @@ class HandleClient extends Thread {
         return responseObject;
     }
 
-    private boolean checkDisconnection(JSONObject serverResponse, OutputStream outputStream) throws IOException {
-        if(serverResponse.getInt("action") == 4) {
-            JSONObject response = new JSONObject();
-            response.put("action", 4);
-            response.put("message", serverResponse.getString("message"));
-            sendMessage(outputStream, response.toString()); // Send message to webclient
-            return true;
-        }
-        else return false;
+    private boolean checkDisconnection(JSONObject serverResponse) {
+        if(serverResponse.getInt("action") == 4) return true;
+        return false;
     }
 
     private void handleDisconnect(String e) {
@@ -195,20 +207,26 @@ class HandleClient extends Thread {
                     break;
                 }
 
+                // Validate token before forwarding message
+                if (validateToken(message) == null) {
+                    System.out.println("(" + this.userData + ")> Desconectado por token invalido");
+                    handleDisconnect("Token invalido");
+                    break;
+                }
+
                 System.out.println("(" + this.userData + ")> " + message);
 
                 // Send message to server
                 serverResponse = forwardClientRequest(message);
 
-                // Send disconnect signal to webclient
-                if(checkDisconnection(serverResponse, outputStream)) {
-                    handleDisconnect(serverResponse.getString("message"));
-                    break;
-                }
-
                 // Forward server response to webclient
                 JSONObject response = serverResponse;
                 sendMessage(outputStream, response.toString()); // Send message to webclient
+
+                // Check if client has disconnected
+                if(checkDisconnection(serverResponse)) {
+                    break;
+                }
 
             } catch (JSONException e) {
                 handleDisconnect("Cliente encerrou a conexao forcadamente");

@@ -17,35 +17,33 @@ export default function Main() {
   });
 
   const websocket = useRef(null);
-  var myIdRef = useRef(null);
-  var tokenRef = useRef(null);
+  var connectionStatusRef = useRef(null);
   var nameRef = useRef(null);
+  var tokenRef = useRef(null);
+  var myIdRef = useRef(null);
   var myPlayerRef = useRef(null);
   var gameStateRef = useRef(null);
 
   useEffect(() => {
     return () => {
-      if (websocket.current) websocket.current.close();
+      if (websocket.current && websocket.current.readyState === WebSocket.OPEN) disconnect();
     }
   }, []);
 
   const resetState = () => {
-    setConnectionStatus(0);
+    updateRef(0, connectionStatusRef, setConnectionStatus);
     updateRef(null, tokenRef, setToken);
     updateRef(null, nameRef, setName);
     updateRef(null, myIdRef, setMyId);
     updateRef(null, myPlayerRef, setMyPlayer);
+    updateRef({ board: [0, 0, 0, 0, 0, 0, 0, 0, 0] }, gameStateRef, setGameState);
   }
 
   const useInterval = (callback, delay) => {
     const savedCallback = useRef();
-
-    // Remember the latest callback.
     useEffect(() => {
       savedCallback.current = callback;
     }, [callback]);
-
-    // Set up the interval.
     useEffect(() => {
       function tick() {
         savedCallback.current();
@@ -84,13 +82,16 @@ export default function Main() {
         }
         else if (response.message) message.error(response.message);
         break;
+      case 3:
+        message.success('Você foi adicionado ao jogo');
+        break;
       case 4:
         resetState();
-        ws.close();
+        disconnect();
         if (response.message) message.info(response.message);
         break;
       case 5:
-        if(response.message) message.info(response.message);
+        if (response.message) message.info(response.message);
         break;
       case 6:
         if (response.gameState) {
@@ -115,20 +116,20 @@ export default function Main() {
     const ip = protocol + '//' + hostname + ':' + port;
     var ws = new WebSocket(ip);
     websocket.current = ws;
-    setConnectionStatus(1);
+    updateRef(1, connectionStatusRef, setConnectionStatus);
 
     ws.onopen = () => {
-      setConnectionStatus(2);
+      updateRef(2, connectionStatusRef, setConnectionStatus);
       const request = {
         'action': 2,
-        'name': name,
+        'name': name
       }
       ws.send(JSON.stringify(request));
     }
 
     ws.onmessage = (response) => {
       response = JSON.parse(response.data);
-      console.log(response)
+      console.log(response);
       if (response && response.action) {
         handleAction(response, ws);
       }
@@ -136,8 +137,8 @@ export default function Main() {
     }
 
     ws.onclose = () => {
+      message.error('A conexão com o servidor foi perdida');
       resetState();
-      ws.close();
     }
   }
 
@@ -147,7 +148,7 @@ export default function Main() {
       'token': token
     }
     websocket.current.send(JSON.stringify(syncRequest));
-  }, token ? syncDelay : null);
+  }, (token && websocket.current.readyState === WebSocket.OPEN) ? syncDelay : null);
 
   const disconnect = () => {
     const request = {
@@ -156,12 +157,14 @@ export default function Main() {
       'token': token
     }
     resetState();
-    if (websocket.current) websocket.current.send(JSON.stringify(request));
-    if (websocket.current) websocket.current.close();
+    if (websocket.current && websocket.current.readyState === WebSocket.OPEN){
+      websocket.current.send(JSON.stringify(request));
+      websocket.current.close();
+    }
   }
 
   const setNameValue = (e) => {
-    setName(e.target.value);
+    updateRef(e.target.value, nameRef, setName);
   }
 
   return (
@@ -190,11 +193,11 @@ export default function Main() {
           <Row justify='center' align='middle'>
             <Col span={8}>
               <Row justify='center'>
-                <Card size='small' style={{ width: 200}} headStyle={{ color: playerColor[1] }} title={gameState.status === 0 ? '-' : gameState.namePlayer1}>
+                <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[1] }} title={gameState.status === 0 ? '-' : gameState.namePlayer1}>
                   <Spin tip='Aguardando oponente' spinning={gameState.status === 0 && myPlayer !== 1}>
                     {(gameState.status !== 0 || myPlayer === 1) &&
                       <div>
-                        <p style={{fontWeight: 700}}>{gameState.turn === 1 ? 'Sua vez!' : null}</p>
+                        <p style={{ fontWeight: 700 }}>{gameState.turn === 1 ? 'Sua vez!' : null}</p>
                         <p style={{ fontSize: '60px', color: playerColor[1] }}>{playerMark[1]}</p>
                       </div>}
                   </Spin>
@@ -206,11 +209,11 @@ export default function Main() {
             </Col>
             <Col span={8}>
               <Row justify='center'>
-                <Card size='small' style={{ width: 200}} headStyle={{ color: playerColor[2] }} title={gameState.status === 0 ? '-' : gameState.namePlayer2}>
+                <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[2] }} title={gameState.status === 0 ? '-' : gameState.namePlayer2}>
                   <Spin tip='Aguardando oponente' spinning={gameState.status === 0 && myPlayer !== 2}>
                     {(gameState.status !== 0 || myPlayer === 2) &&
                       <div>
-                        <p style={{fontWeight: 700}}>{gameState.turn === 2 ? 'Sua vez!' : null}</p>
+                        <p style={{ fontWeight: 700 }}>{gameState.turn === 2 ? 'Sua vez!' : null}</p>
                         <p style={{ fontSize: '60px', color: playerColor[2] }}>{playerMark[2]}</p>
                       </div>}
                   </Spin>

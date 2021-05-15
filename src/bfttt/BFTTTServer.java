@@ -73,8 +73,6 @@ public class BFTTTServer extends DefaultSingleRecoverable{
     }
 
     private int getPlayerNum(String userData) {
-        System.out.println("TESTE1: " + this.gameState.getJSON().getString("userDataPlayer1"));
-        System.out.println("TESTE2: " + this.gameState.getJSON().getString("userDataPlayer2"));
         if(userData.equals(this.gameState.getJSON().getString("userDataPlayer1"))) return 1;
         if(userData.equals(this.gameState.getJSON().getString("userDataPlayer2"))) return 2;
         return 0;
@@ -159,12 +157,23 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         String request = new String(bytes);
         try {
             JSONObject requestObj = new JSONObject(request);
+            JSONObject response = new JSONObject();
+
+            if(!requestObj.has("action")) requestObj.put("action", 1);
             int action = requestObj.getInt("action");
             String userData = requestObj.getString("userData");
+
+            if(requestObj.getInt("action") == 4) {
+                System.out.println("Um jogador foi desconectado");
+                response.put("action", 4);
+                response.put("message", "Cliente solicitou a desconexao");
+                handleDisconnect(userData);
+                return (response.toString()).getBytes();
+            }
+
             String token = requestObj.getString("token");
             String name = getClientName(token);
             int clientId = getClientId(token);
-            JSONObject response = new JSONObject();
 
             switch(action) {
                 case 3:
@@ -176,12 +185,6 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                     }
                     System.out.println("Jogador " + clientId + " entrou no jogo");
                     break;
-                case 4:
-                    System.out.println("(ClientId: " + clientId + ")Acao = jogador desconectado");
-                    response.put("action", 4);
-                    response.put("message", "Cliente solicitou a desconexao");
-                    handleDisconnect(userData);
-                    return (response.toString()).getBytes();
                 case 5:
                     System.out.println("(ClientId: "+ clientId +")Acao = marcar posicao");
                     JSONArray board = this.gameState.getBoardJSON();
@@ -236,9 +239,9 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         } catch (JSONException e) {
             JSONObject response = new JSONObject();
             response.put("action", 4);
-            response.put("message", "Mensagem nao reconhecida");
+            response.put("message", "O servidor nao pode entender sua requisicao");
             handleDisconnect(new JSONObject(request).getString("userData"));
-            System.out.println("Mensagem nao reconhecida: " + e);
+            System.out.println("O servidor nao pode entender a requisicao de um cliente: " + e);
             return (response.toString()).getBytes();
         }
     }

@@ -1,26 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package bfttt;
 
-import java.util.Map;
-import java.io.File;
-import java.io.IOException;
-
-import bftsmart.tom.MessageContext;
-import bftsmart.tom.ServiceReplica;
-import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
-
-import com.auth0.jwt.interfaces.Claim;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-import com.auth0.jwt.JWT;
 import java.util.Arrays;
-
 
 public class GameBoard {
     public static int[] board = {0, 0, 0, 0, 0, 0, 0, 0, 0};
