@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Row, Col, Input, message, Card, Spin, Typography, Divider, Avatar, Badge } from 'antd';
-import { ClockCircleOutlined, PlayCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { ExclamationCircleOutlined, PlayCircleOutlined, CloseCircleOutlined, SmileOutlined, MehOutlined, FrownOutlined } from '@ant-design/icons';
 import jwt_decode from 'jwt-decode';
 import Board from './board.jsx';
+import Results from './results.jsx';
 import { connectionStatusColor, gameStatus, conStatus, playerColor, playerMark, syncDelay, socketPort } from '../constants/constants.js';
 
 export default function Main() {
@@ -11,6 +12,8 @@ export default function Main() {
   const [token, setToken] = useState(null);
   const [myId, setMyId] = useState(0);
   const [myPlayer, setMyPlayer] = useState(0);
+  const [resultsVisible, setResultsVisible] = useState(false);
+  const [resultsObj, setResultsObj] = useState({});
   const [gameState, setGameState] = useState({
     board: [0, 0, 0,
       0, 0, 0,
@@ -23,6 +26,8 @@ export default function Main() {
   var tokenRef = useRef(null);
   var myIdRef = useRef(null);
   var myPlayerRef = useRef(null);
+  var resultsVisibleRef = useRef(null);
+  var resultsObjRef = useRef(null);
   var gameStateRef = useRef(null);
 
   useEffect(() => {
@@ -67,6 +72,58 @@ export default function Main() {
     return null;
   }
 
+  const findMyName = () => {
+    if(myIdRef.current === gameStateRef.current.idPlayer1) return gameStateRef.current.namePlayer1;
+    if(myIdRef.current === gameStateRef.current.idPlayer2) return gameStateRef.current.namePlayer2;
+    return '';
+
+  }
+
+  const makeResult = (result) => {
+    let title = '-';
+    let message = '';
+    let icon = null;
+    if(result === 2) {
+      title = 'Empate!';
+      message = 'O jogo empatou';
+      icon = (<MehOutlined />);
+    }
+    if(result === 3 && myPlayerRef.current === 1) {
+      title = 'Você venceu!';
+      message = 'Parabéns ' + findMyName() + ', você venceu!';
+      icon = (<SmileOutlined />);
+    }
+    if(result === 3 && myPlayerRef.current === 2) {
+      title = 'Você perdeu!';
+      message = findMyName() + ', infelizmente você perdeu!';
+      icon = (<FrownOutlined />);
+    }
+    if(result === 4 && myPlayerRef.current === 1) {
+      title = 'Você perdeu!';
+      message = findMyName() + ', infelizmente você perdeu!';
+      icon = (<FrownOutlined />);
+    }
+    if(result === 4 && myPlayerRef.current === 2) {
+      title = 'Você venceu!';
+      message = 'Parabéns ' + findMyName() + ', você venceu!';
+      icon = (<SmileOutlined />);
+    }
+    return {
+      title: title,
+      message: message,
+      icon: icon
+    };
+  }
+
+  const showResults = (status) => {
+    updateRef(makeResult(status), resultsObjRef, setResultsObj);
+    updateRef(true, resultsVisibleRef, setResultsVisible);
+    setTimeout(
+      function() {
+        disconnect();
+      }, 1500)
+    }
+
   const handleAction = (response, ws) => {
     const action = response.action;
     switch (action) {
@@ -102,6 +159,7 @@ export default function Main() {
           if (!myPlayer) {
             updateRef(findMyPlayer(response.gameState), myPlayerRef, setMyPlayer);
           }
+          if([2, 3, 4].includes(response.gameState.status)) showResults(response.gameState.status);
           updateRef(response.gameState, gameStateRef, setGameState);
         }
         break;
@@ -200,7 +258,7 @@ export default function Main() {
                 <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[1] }} title={gameState.namePlayer1 ? gameState.namePlayer1 : '-'}>
                   <Spin tip='Aguardando oponente' spinning={gameState.status === 0 && myPlayer !== 1}>
                     {(gameState.status !== 0 || myPlayer === 1) &&
-                      <Badge count={gameState.turn !== 1 ? <ClockCircleOutlined style={{ color: '#f5222d' }} /> : 0}>
+                      <Badge count={gameState.turn === 1 ? <ExclamationCircleOutlined style={{ color: '#f5222d' }} /> : 0}>
                         <Avatar size={100} shape='circle' icon={<span style={{ color: playerColor[1], fontWeight: 600 }}>{playerMark[1]}</span>} />
                       </Badge>}
                   </Spin>
@@ -215,7 +273,7 @@ export default function Main() {
                 <Card size='small' style={{ width: 200 }} headStyle={{ color: playerColor[2] }} title={gameState.namePlayer2 ? gameState.namePlayer2 : '-'}>
                   <Spin tip='Aguardando oponente' spinning={gameState.status === 0 && myPlayer !== 2}>
                     {(gameState.status !== 0 || myPlayer === 2) &&
-                      <Badge count={gameState.turn !== 2 ? <ClockCircleOutlined style={{ color: '#f5222d' }} /> : 0}>
+                      <Badge count={gameState.turn === 2 ? <ExclamationCircleOutlined style={{ color: '#f5222d' }} /> : 0}>
                         <Avatar size={100} shape='circle' icon={<span style={{ color: playerColor[2], fontWeight: 600 }}>{playerMark[2]}</span>} />
                       </Badge>}
                   </Spin>
@@ -225,6 +283,7 @@ export default function Main() {
           </Row>
         </>
       }
+      <Results updateRef={updateRef} resultsVisibleRef={resultsVisibleRef} setResultsVisible={setResultsVisible} resultsObj={resultsObjRef.current} />
     </div>
   )
 }

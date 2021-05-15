@@ -1,5 +1,5 @@
-import { message } from 'antd';
 import React from 'react';
+import { message } from 'antd';
 import { playerMark, playerColor } from '../constants/constants.js';
 
 const cellStyle = {
