@@ -83,7 +83,7 @@ export default function Main() {
     let message = '';
     let icon = null;
     if(result === 2) {
-      message = 'O jogo empatou';
+      message = 'Empate!';
       icon = (<MehOutlined />);
     }
     if(result === 3 && myPlayerRef.current === 1) {
@@ -155,6 +155,7 @@ export default function Main() {
           if([2, 3, 4].includes(response.gameState.status)) showResults(response.gameState.status);
           updateRef(response.gameState, gameStateRef, setGameState);
         }
+        if (response.message) message.info(response.message);
         break;
       default:
         break;
@@ -259,7 +260,7 @@ export default function Main() {
               </Row>
             </Col>
             <Col span={8}>
-              <Board gameState={gameState} token={token} websocket={websocket}></Board>
+              {gameState.status === 1 && <Board gameState={gameState} token={token} websocket={websocket}></Board>}
             </Col>
             <Col span={8}>
               <Row justify='center'>

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package bfttt;
 
 import bftsmart.tom.MessageContext;
@@ -18,9 +13,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.Map;
 
 public class BFTTTServer extends DefaultSingleRecoverable{
@@ -43,7 +36,7 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         this.gameState = new GameBoard();
 
         // initialize BFT
-        new ServiceReplica(id,this,this);
+        new ServiceReplica(this.id,this,this);
     }
 
     private String createToken(String name) {
@@ -96,10 +89,6 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         return false;
     }
 
-    private void handleDisconnect(String userData) {
-        this.gameState.disconnectPlayer((userData));
-    }
-
     private void loadDBFile() {
         File dbFile = new File(this.dbPath);
         if (dbFile.exists()) {
@@ -128,140 +117,146 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         return true;
     }
 
+    private void handleDisconnect(String userData) {
+        this.gameState.disconnectPlayer((userData));
+    }
+
+    private JSONObject makeDisconnectResponse(String reason) {
+        System.out.println("Jogador desconectado. Motivo: " + reason);
+        JSONObject response = new JSONObject();
+        response.put("action", 4);
+        response.put("message", reason);
+        return response;
+    }
+
     @Override
     public byte[] appExecuteOrdered(byte[] bytes, MessageContext mc) {
         String request = new String(bytes);
+        JSONObject requestObj;
+        JSONObject decodedRequest;
+        JSONObject response = new JSONObject();
+
+        String userData;
+        String rawMessage;
+        int action;
+        String token;
+        String name;
+        int clientId;
+
         try {
-            JSONObject requestObj = new JSONObject(request);
-            JSONObject response = new JSONObject();
-
-            String userData;
-            int action;
-            String token;
-            String name;
-            int clientId;
-
-            try {
-                userData = requestObj.getString("userData");
-            } catch (JSONException e) {
-                response.put("action", 4);
-                response.put("message", "Falha na comunicacao com o servidor");
-                return (response.toString()).getBytes();
-            }
-            try {
-                action = requestObj.getInt("action");
-            } catch (JSONException e) {
-                action = 1;
-            }
-
-            if(action == 0) {
-                response.put("action", 4);
-                response.put("message", "Desconectad");
-                System.out.println("Um jogador foi desconectado");
-                handleDisconnect(userData);
-                return (response.toString()).getBytes();
-            }
-
-            if(action == 2) {
-                response.put("action", 2);
-                response.put("message", "Token de acesso recebido");
-                response.put("token", createToken(requestObj.getString(("name"))));
-                return (response.toString()).getBytes();
-            }
-
-            try {
-                token = requestObj.getString("token");
-                if(validateToken(token) == null) {
-                    response.put("action", 4);
-                    response.put("message", "Token invalido");
-                    handleDisconnect(userData);
-                    return (response.toString()).getBytes();
-                }
-                name = getClientName(token);
-                clientId = getClientId(token);
-            } catch (JSONException e) {
-                System.out.println("Um jogador foi desconectado: " + e);
-                response.put("action", 4);
-                response.put("message", "Token invalido");
-                handleDisconnect(userData);
-                return (response.toString()).getBytes();
-            }
-
-            if(requestObj.getInt("action") == 4) {
-                System.out.println("Um jogador foi desconectado");
-                response.put("action", 4);
-                response.put("message", "Cliente solicitou a desconexao");
-                handleDisconnect(userData);
-                return (response.toString()).getBytes();
-            }
-
-            // Here all requests have a valid token and userData
-            switch(action) {
-                case 3:
-                    System.out.println("(ClientId: "+ clientId +")Acao = pedir para entrar no jogo");
-                    if(!handleNewPlayer(clientId, userData, name)) {
-                        response.put("action", 4);
-                        response.put("message", "Ja existe um jogo em andamento");
-                        return (response.toString()).getBytes();
-                    }
-                    System.out.println("Jogador " + name + "(ClientId: " + clientId + ")" + " entrou no jogo");
-                    break;
-                case 5:
-                    System.out.println("(ClientId: "+ clientId +")Acao = marcar posicao");
-                    if(this.gameState.getStatus() != 1) {
-                        response.put("action", 5);
-                        response.put("message", "O jogo nao esta em andamento!");
-                        return (response.toString()).getBytes();
-                    }
-                    if(!this.gameState.checkPlayerTurn(userData)) {
-                        response.put("action", 5);
-                        response.put("message", "Nao e a sua vez de jogar!");
-                        return (response.toString()).getBytes();
-                    }
-                    int pos = requestObj.getInt("pos");
-                    if(!this.gameState.checkEmptySpace(pos)) {
-                        response.put("action", 5);
-                        response.put("message", "Essa posicao ja foi marcada!");
-                        return (response.toString()).getBytes();
-                    }
-                    int playerNum = this.gameState.getPlayerNum(userData);
-                    this.gameState.markPosition(pos, playerNum);
-                    if(this.gameState.isGameOver(playerNum)){
-                        if(playerNum == 1) {
-                            response.put("message", "O jogador 1 venceu!");
-                            this.gameState.setStatus(3);
-                        } else if(playerNum == 2) {
-                            response.put("message", "O jogador 2 venceu!");
-                            this.gameState.setStatus(4);
-                        }
-                        response.put("action", 5);
-                        return (response.toString()).getBytes();
-                    }
-                    if (!this.gameState.isGameOver(playerNum) && noZeroes()) {
-                        response.put("message", "O jogo empatou!");
-                        this.gameState.setStatus(2);
-                    }
-                    this.gameState.setNextTurn();
-                    break;
-                case 6:
-                    //System.out.println("(ClientId: "+ clientId +")Acao = sincronizar");
-                    break;
-                default:
-                    System.out.println("(ClientId: "+ clientId +")Acao nao reconhecida");
-                    break;
-            }
-
-            response.put("action", action);
-            response.put("gameState", this.gameState.secureGameState());
-            return (response.toString()).getBytes();
-        } catch (JSONException e) {
-            JSONObject response = new JSONObject();
-            response.put("action", 4);
-            response.put("message", "O servidor nao pode entender sua requisicao");
-            handleDisconnect(new JSONObject(request).getString("userData"));
-            System.out.println("O servidor nao pode entender a requisicao de um cliente: " + e);
-            return (response.toString()).getBytes();
+            requestObj = new JSONObject(request);
+            userData = requestObj.getString("userData");
+            rawMessage = requestObj.getString("rawMessage");
+        } catch (JSONException jsonException) {
+            handleDisconnect(null);
+            response = makeDisconnectResponse("Nao foi possivel decodificar a requisicao do proxy");
+            return response.toString().getBytes();
         }
+
+        if(rawMessage.equals("\u0003�")) {
+            handleDisconnect(userData);
+            response = makeDisconnectResponse("Cliente desconectou de uma forma inesperada");
+            return response.toString().getBytes();
+        }
+
+        try {
+            decodedRequest = new JSONObject(rawMessage);
+        } catch (JSONException jsonException) {
+            response.put("action", 1);
+            response.put("message", "Requisicao nao reconhecida");
+            return response.toString().getBytes();
+        }
+
+        if(decodedRequest.has("action")) action = decodedRequest.getInt("action");
+        else {
+            action = 1;
+        }
+
+        if(action == 2) {
+            response.put("action", 2);
+            response.put("message", "Token de acesso recebido");
+            response.put("token", createToken(decodedRequest.getString("name")));
+            return response.toString().getBytes();
+        }
+
+        try {
+            token = decodedRequest.getString("token");
+            if(validateToken(token) == null) {
+                handleDisconnect(userData);
+                response = makeDisconnectResponse("Token invalido");
+                return response.toString().getBytes();
+            }
+            name = getClientName(token);
+            clientId = getClientId(token);
+        } catch (JSONException jsonException) {
+            handleDisconnect(userData);
+            response = makeDisconnectResponse("Token nao encontrado");
+            return response.toString().getBytes();
+        }
+
+        if(decodedRequest.getInt("action") == 4) {
+            handleDisconnect(userData);
+            response = makeDisconnectResponse("Cliente solicitou a desconexao");
+            return response.toString().getBytes();
+        }
+
+        // Here all requests have a valid token and userData
+        switch(action) {
+            case 3:
+                System.out.println("(ClientId: "+ clientId +")Acao = pedir para entrar no jogo");
+                if(!handleNewPlayer(clientId, userData, name)) {
+                    response = makeDisconnectResponse("Ja existe um jogo em andamento");
+                    return response.toString().getBytes();
+                }
+                System.out.println("Jogador " + name + "(ClientId: " + clientId + ")" + " entrou no jogo");
+                break;
+            case 5:
+                System.out.println("(ClientId: "+ clientId +")Acao = marcar posicao");
+                if(this.gameState.getStatus() != 1) {
+                    response.put("action", 5);
+                    response.put("message", "O jogo nao esta em andamento!");
+                    return response.toString().getBytes();
+                }
+                if(!this.gameState.checkPlayerTurn(userData)) {
+                    response.put("action", 5);
+                    response.put("message", "Nao e a sua vez de jogar!");
+                    return response.toString().getBytes();
+                }
+                int pos = decodedRequest.getInt("pos");
+                if(!this.gameState.checkEmptySpace(pos)) {
+                    response.put("action", 5);
+                    response.put("message", "Essa posicao ja foi marcada!");
+                    return response.toString().getBytes();
+                }
+                int playerNum = this.gameState.getPlayerNum(userData);
+                this.gameState.markPosition(pos, playerNum);
+                if(this.gameState.isGameOver(playerNum)){
+                    if(playerNum == 1) {
+                        response.put("message", "O jogador 1 venceu!");
+                        this.gameState.setStatus(3);
+                    } else if(playerNum == 2) {
+                        response.put("message", "O jogador 2 venceu!");
+                        this.gameState.setStatus(4);
+                    }
+                    response.put("action", 5);
+                    return response.toString().getBytes();
+                }
+                if (!this.gameState.isGameOver(playerNum) && noZeroes()) {
+                    response.put("message", "O jogo empatou!");
+                    this.gameState.setStatus(2);
+                }
+                this.gameState.setNextTurn();
+                break;
+            case 6:
+                //System.out.println("(ClientId: "+ clientId +")Acao = sincronizar");
+                break;
+            default:
+                System.out.println("(ClientId: "+ clientId +")Acao nao reconhecida");
+                break;
+        }
+        response.put("action", action);
+        response.put("gameState", this.gameState.secureGameState());
+        return response.toString().getBytes();
     }
 
     @Override
@@ -271,12 +266,14 @@ public class BFTTTServer extends DefaultSingleRecoverable{
 
     @Override
     public byte[] getSnapshot() {
+        System.out.println("getSnapshot: " + this.gameState.getJSON().toString());
         return this.gameState.getJSON().toString().getBytes();
     }
 
     @Override
     public void installSnapshot(byte[] bytes) {
         JSONObject snap = new JSONObject(bytes);
+        System.out.println("installSnapshot: " + snap);
         this.gameState = new GameBoard(snap);
     }
 

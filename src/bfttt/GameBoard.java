@@ -66,22 +66,20 @@ public class GameBoard {
         this.turn = 1;
     }
 
-    public boolean disconnectPlayer(String userData) {
+    public void disconnectPlayer(String userData) {
+        if(userData == null) return;
         if(userData.equals(this.userDataPlayer1)) {
             this.idPlayer1 = -1;
             this.namePlayer1 = "";
             this.userDataPlayer1 = "";
             this.reset();
-            return true;
         }
         if(userData.equals(this.userDataPlayer2)) {
             this.idPlayer2 = -1;
             this.namePlayer2 = "";
             this.userDataPlayer2 = "";
             this.reset();
-            return true;
         }
-        return false;
     }
 
     private void reset() {

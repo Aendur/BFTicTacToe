@@ -2,6 +2,7 @@ package bfttt;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
@@ -12,7 +13,6 @@ import javax.xml.bind.DatatypeConverter;
 
 import bftsmart.tom.ServiceProxy;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 class HandleClient extends Thread {
@@ -151,61 +151,76 @@ class HandleClient extends Thread {
         return null;
     }
 
-    private JSONObject forwardClientRequest(String message) throws JSONException {
-        JSONObject request = new JSONObject(message);
-        request.put("userData", this.userData);
-        byte[] response = proxy.invokeOrdered(request.toString().getBytes());
-        return new JSONObject(new String(response));
-    }
-
-    private boolean checkDisconnection(JSONObject serverResponse) {
-        return serverResponse.getInt("action") == 4;
+    private boolean checkDisconnection(String response) {
+        JSONObject responseObj = new JSONObject(response);
+        return responseObj.getInt("action") == 4;
     }
 
     private void handleDisconnect(String e) {
         JSONObject response = new JSONObject();
-        response.put("action", 0);
+        JSONObject rawMessage = new JSONObject();
+        rawMessage.put("action", 4);
         response.put("userData", this.userData);
+        response.put("rawMessage", rawMessage.toString());
         this.proxy.invokeOrdered(response.toString().getBytes());
         this.proxy.close();
         System.out.println("(" + this.userData + "): Desconectado. Motivo: " + e);
     }
 
     private void readMessages(InputStream inputStream, OutputStream outputStream) throws IOException {
-        String message;
-        JSONObject serverResponse;
+        String request;
+        JSONObject requestObj;
+        String serverResponse;
 
-        while(!this.socket.isClosed()) {
+        while(this.socket.isConnected()) {
             // Receive message from webclient
-            message = decodeMessage(inputStream);
-            if (message == null) {
+            try {
+                request = decodeMessage(inputStream);
+            } catch (SocketException socketException) {
+                this.socket.close();
+                break;
+            }
+            if (request == null) {
+                this.socket.close();
                 break;
             }
 
+            // Make request object
+            System.out.println("(" + this.userData + ")> " + request);
+            requestObj = new JSONObject();
+            requestObj.put("userData", this.userData);
+            requestObj.put("rawMessage", request);
+
             // Forward client request to server
-            System.out.println("(" + this.userData + ")> " + message);
-            serverResponse = forwardClientRequest(message);
+            byte[] response;
+            try {
+                response = proxy.invokeOrdered(requestObj.toString().getBytes());
+            }
+            catch (RuntimeException runtimeException) {
+                // Servers offline
+                System.out.println("Nao foi possivel conectar aos servidores: " + runtimeException);
+                JSONObject offlineResponse = new JSONObject();
+                offlineResponse.put("action", 4);
+                offlineResponse.put("message", "Servidores offline");
+                System.out.println("(" + this.userData + ")< " + offlineResponse);
+                outputStream.write(encode(offlineResponse.toString()));
+                outputStream.flush();
+                return;
+            }
 
             // Forward server response to webclient
+            serverResponse = new String(response);
             System.out.println("(" + this.userData + ")< " + serverResponse);
-            sendMessage(outputStream, serverResponse.toString());
+            outputStream.write(encode(serverResponse));
+            outputStream.flush();
 
-            // Check if client has disconnected
+            // Check if server disconnected the client
             if(checkDisconnection(serverResponse)) {
                 this.socket.close();
                 break;
             }
         }
         handleDisconnect("Cliente desconectou");
-    }
-
-    private void sendMessage(OutputStream outputStream, String message) {
-        try {
-            outputStream.write(encode(message));
-            outputStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void run() {
@@ -233,8 +248,8 @@ class HandleClient extends Thread {
 
         try {
             readMessages(inputStream, outputStream);
-        } catch (Exception e) {
-            handleDisconnect("Cliente desconectou de forma inesperada: " + e);
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
         }
     }
 }
