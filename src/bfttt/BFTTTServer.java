@@ -5,25 +5,74 @@
  */
 package bfttt;
 
-import java.util.Map;
-import java.io.File;
-import java.io.IOException;
-
 import bftsmart.tom.MessageContext;
 import bftsmart.tom.ServiceReplica;
 import bftsmart.tom.server.defaultservices.DefaultSingleRecoverable;
-
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import com.auth0.jwt.JWT;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Map;
 
 public class BFTTTServer extends DefaultSingleRecoverable{
-    private int id;
-    private String dbPath;
+    private final int id;
+    private int lastClientId;
+    private final String secret;
+    private final String dbPath;
     private GameBoard gameState; // = new GameBoard();
+
+    public BFTTTServer(int id) {
+        this.id = id;
+        this.secret = "4f89321u89fj2398f1h432fjr093yfh19823hf";
+        this.lastClientId = 1;
+        this.dbPath = "serverdata" + id + ".json";
+
+        // load ongoing games to server
+        // this.loadDBFile();
+
+        // initialize game board
+        this.gameState = new GameBoard();
+
+        // initialize BFT
+        new ServiceReplica(id,this,this);
+    }
+
+    private String createToken(String name) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(this.secret);
+            return JWT.create()
+                    .withIssuer("auth0")
+                    .withClaim("clientId", this.lastClientId)
+                    .withClaim("name", name)
+                    .sign(algorithm);
+        } catch (JWTCreationException | UnsupportedEncodingException exception){
+            //Invalid Signing configuration / Couldn't convert Claims.
+            return "";
+        }
+    }
+
+    private String validateToken(String token) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(this.secret);
+            JWTVerifier verifier = JWT.require(algorithm)
+                    .withIssuer("auth0")
+                    .build();
+            DecodedJWT jwt = verifier.verify(token);
+            return jwt.toString();
+        } catch (JWTVerificationException | UnsupportedEncodingException exception){
+            //Invalid signature/claims
+            return null;
+        }
+    }
 
     private int getClientId(String token) {
         DecodedJWT jwt = JWT.decode(token);
@@ -40,11 +89,15 @@ public class BFTTTServer extends DefaultSingleRecoverable{
     }
 
     private boolean handleNewPlayer(int clientId, String userData, String name) {
-        return this.gameState.addNewPlayer(clientId, userData, name);
+        if(this.gameState.addNewPlayer(clientId, userData, name)) {
+            this.lastClientId++;
+            return true;
+        }
+        return false;
     }
 
-    private boolean handleDisconnect(String userData) {
-        return this.gameState.disconnectPlayer((userData));
+    private void handleDisconnect(String userData) {
+        this.gameState.disconnectPlayer((userData));
     }
 
     private void loadDBFile() {
@@ -60,7 +113,7 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                 dbFile.createNewFile();
             } catch (IOException e) {
                 System.out.println("failed to create db file " + this.dbPath);
-                System.out.println(e.toString());
+                e.printStackTrace();
             }
         }
     }
@@ -75,20 +128,6 @@ public class BFTTTServer extends DefaultSingleRecoverable{
         return true;
     }
 
-    public BFTTTServer(int id) {
-        this.id = id;
-        this.dbPath = "serverdata" + id + ".json";
-
-        // load ongoing games to server
-        // this.loadDBFile();
-
-        // initialize game board
-        this.gameState = new GameBoard();
-
-        // initialize BFT
-        new ServiceReplica(id,this,this);
-    }
-
     @Override
     public byte[] appExecuteOrdered(byte[] bytes, MessageContext mc) {
         String request = new String(bytes);
@@ -96,9 +135,57 @@ public class BFTTTServer extends DefaultSingleRecoverable{
             JSONObject requestObj = new JSONObject(request);
             JSONObject response = new JSONObject();
 
-            if(!requestObj.has("action")) requestObj.put("action", 1);
-            int action = requestObj.getInt("action");
-            String userData = requestObj.getString("userData");
+            String userData;
+            int action;
+            String token;
+            String name;
+            int clientId;
+
+            try {
+                userData = requestObj.getString("userData");
+            } catch (JSONException e) {
+                response.put("action", 4);
+                response.put("message", "Falha na comunicacao com o servidor");
+                return (response.toString()).getBytes();
+            }
+            try {
+                action = requestObj.getInt("action");
+            } catch (JSONException e) {
+                action = 1;
+            }
+
+            if(action == 0) {
+                response.put("action", 4);
+                response.put("message", "Desconectad");
+                System.out.println("Um jogador foi desconectado");
+                handleDisconnect(userData);
+                return (response.toString()).getBytes();
+            }
+
+            if(action == 2) {
+                response.put("action", 2);
+                response.put("message", "Token de acesso recebido");
+                response.put("token", createToken(requestObj.getString(("name"))));
+                return (response.toString()).getBytes();
+            }
+
+            try {
+                token = requestObj.getString("token");
+                if(validateToken(token) == null) {
+                    response.put("action", 4);
+                    response.put("message", "Token invalido");
+                    handleDisconnect(userData);
+                    return (response.toString()).getBytes();
+                }
+                name = getClientName(token);
+                clientId = getClientId(token);
+            } catch (JSONException e) {
+                System.out.println("Um jogador foi desconectado: " + e);
+                response.put("action", 4);
+                response.put("message", "Token invalido");
+                handleDisconnect(userData);
+                return (response.toString()).getBytes();
+            }
 
             if(requestObj.getInt("action") == 4) {
                 System.out.println("Um jogador foi desconectado");
@@ -108,10 +195,7 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                 return (response.toString()).getBytes();
             }
 
-            String token = requestObj.getString("token");
-            String name = getClientName(token);
-            int clientId = getClientId(token);
-
+            // Here all requests have a valid token and userData
             switch(action) {
                 case 3:
                     System.out.println("(ClientId: "+ clientId +")Acao = pedir para entrar no jogo");
@@ -120,24 +204,23 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                         response.put("message", "Ja existe um jogo em andamento");
                         return (response.toString()).getBytes();
                     }
-                    System.out.println("Jogador " + clientId + " entrou no jogo");
+                    System.out.println("Jogador " + name + "(ClientId: " + clientId + ")" + " entrou no jogo");
                     break;
                 case 5:
                     System.out.println("(ClientId: "+ clientId +")Acao = marcar posicao");
-                    JSONArray board = this.gameState.getBoardJSON();
-                    if(this.gameState.getJSON().getInt("status") != 1) {
-                        response.put("action", action);
+                    if(this.gameState.getStatus() != 1) {
+                        response.put("action", 5);
                         response.put("message", "O jogo nao esta em andamento!");
                         return (response.toString()).getBytes();
                     }
                     if(!this.gameState.checkPlayerTurn(userData)) {
-                        response.put("action", action);
+                        response.put("action", 5);
                         response.put("message", "Nao e a sua vez de jogar!");
                         return (response.toString()).getBytes();
                     }
                     int pos = requestObj.getInt("pos");
                     if(!this.gameState.checkEmptySpace(pos)) {
-                        response.put("action", action);
+                        response.put("action", 5);
                         response.put("message", "Essa posicao ja foi marcada!");
                         return (response.toString()).getBytes();
                     }
@@ -145,18 +228,16 @@ public class BFTTTServer extends DefaultSingleRecoverable{
                     this.gameState.markPosition(pos, playerNum);
                     if(this.gameState.isGameOver(playerNum)){
                         if(playerNum == 1) {
-                            response.put("action", action);
                             response.put("message", "O jogador 1 venceu!");
                             this.gameState.setStatus(3);
                         } else if(playerNum == 2) {
-                            response.put("action", action);
                             response.put("message", "O jogador 2 venceu!");
                             this.gameState.setStatus(4);
                         }
+                        response.put("action", 5);
                         return (response.toString()).getBytes();
                     }
                     if (!this.gameState.isGameOver(playerNum) && noZeroes()) {
-                        response.put("action", action);
                         response.put("message", "O jogo empatou!");
                         this.gameState.setStatus(2);
                     }

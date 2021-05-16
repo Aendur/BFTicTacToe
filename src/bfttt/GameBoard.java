@@ -43,6 +43,7 @@ public class GameBoard {
             this.idPlayer1 = clientId;
             this.userDataPlayer1 = userData;
             this.namePlayer1 = name;
+            if(this.checkGameStart()) this.startGame();
             return true;
         }
         if(this.idPlayer2 == -1) {
@@ -50,11 +51,19 @@ public class GameBoard {
             this.idPlayer2 = clientId;
             this.userDataPlayer2 = userData;
             this.namePlayer2 = name;
-            this.status = 1;
-            this.turn = 1;
+            if(this.checkGameStart()) this.startGame();
             return true;
         }
         return false;
+    }
+
+    private boolean checkGameStart() {
+        return this.idPlayer1 != -1 && this.idPlayer2 != -1;
+    }
+
+    private void startGame() {
+        this.status = 1;
+        this.turn = 1;
     }
 
     public boolean disconnectPlayer(String userData) {
@@ -93,6 +102,10 @@ public class GameBoard {
         this.status = status;
     }
 
+    public int getStatus() {
+        return this.status;
+    }
+
     public JSONObject getJSON() {
         JSONObject json = new JSONObject();
         JSONArray jsonboard = new JSONArray(board);
@@ -118,13 +131,11 @@ public class GameBoard {
     }
 
     public boolean checkEmptySpace(int pos) {
-        if(board[pos] != 0) return false;
-        return true;
+        return board[pos] == 0;
     }
 
     public boolean checkPlayerTurn(String userData) {
-        if(this.turn == getPlayerNum(userData)) return true;
-        return false;
+        return this.turn == getPlayerNum(userData);
     }
 
     public int getPlayerNum(String userData) {
@@ -144,8 +155,7 @@ public class GameBoard {
         int[] gameArray = GameBoard.board;
         if (checkHorizontal(X_or_O, gameArray)) return true;
         if (checkVertical(X_or_O, gameArray)) return true;
-        if (checkCrossed(X_or_O, gameArray)) return true;
-        return false;
+        return checkCrossed(X_or_O, gameArray);
     }
 
     private boolean checkVertical (int X_or_O, int[] array) {
@@ -164,7 +174,6 @@ public class GameBoard {
 
     private boolean checkCrossed (int X_or_O, int[] array) {
         if (array[0] == X_or_O && array[4] == X_or_O && array[8] == X_or_O) return true;
-        if (array[2] == X_or_O && array[4] == X_or_O && array[6] == X_or_O) return true;
-        return false;
+        return array[2] == X_or_O && array[4] == X_or_O && array[6] == X_or_O;
     }
 }

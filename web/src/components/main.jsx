@@ -208,11 +208,11 @@ export default function Main() {
       'name': name,
       'token': token
     }
-    resetState();
     if (websocket.current && websocket.current.readyState === WebSocket.OPEN) {
       websocket.current.send(JSON.stringify(request));
       websocket.current.close();
     }
+    resetState();
   }
 
   const setNameValue = (e) => {
