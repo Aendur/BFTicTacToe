@@ -3,7 +3,7 @@ import { message } from 'antd';
 import { playerMark, playerColor } from '../constants/constants.js';
 
 const cellStyle = {
-  backgroundColor: 'gray',
+  backgroundColor: 'lightgray',
   border: '0',
   height: '100px',
   width: '100px',
